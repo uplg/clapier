@@ -22,6 +22,11 @@ struct Args {
     #[arg(long)]
     root: PathBuf,
 
+    /// Overlay tree tried before the root: rabbits/<mac>/… for requests
+    /// carrying a valid `m` query param, then common/…
+    #[arg(long)]
+    overlay: Option<PathBuf>,
+
     /// Rabbit IP: its requests get a 🐰 tag in logs and on the status page
     #[arg(long)]
     rabbit: Option<IpAddr>,
@@ -48,16 +53,34 @@ async fn main() -> Result<()> {
         );
     }
 
-    let app = AppState::new(root.clone(), args.rabbit);
+    // Fail fast on a bad overlay path: silently serving the base tree
+    // when a deploy is believed active would be worse than not starting.
+    let overlay = args
+        .overlay
+        .map(|o| {
+            o.canonicalize()
+                .with_context(|| format!("overlay not found: {}", o.display()))
+        })
+        .transpose()?;
+
+    let app = AppState::new(root.clone(), overlay.clone(), args.rabbit);
     let router = clapier::router(app);
     let listener = tokio::net::TcpListener::bind(args.bind)
         .await
         .with_context(|| format!("cannot bind {}", args.bind))?;
-    info!(
-        "clapier listening on http://{} - serving {}",
-        args.bind,
-        root.display()
-    );
+    match &overlay {
+        Some(o) => info!(
+            "clapier listening on http://{} - serving {} + overlay {}",
+            args.bind,
+            root.display(),
+            o.display()
+        ),
+        None => info!(
+            "clapier listening on http://{} - serving {}",
+            args.bind,
+            root.display()
+        ),
+    }
     axum::serve(
         listener,
         router.into_make_service_with_connect_info::<SocketAddr>(),

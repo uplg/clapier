@@ -7,7 +7,14 @@ use std::net::SocketAddr;
 use clapier::AppState;
 
 async fn spawn_server(root: std::path::PathBuf) -> SocketAddr {
-    let app = AppState::new(root, None);
+    spawn_server_with_overlay(root, None).await
+}
+
+async fn spawn_server_with_overlay(
+    root: std::path::PathBuf,
+    overlay: Option<std::path::PathBuf>,
+) -> SocketAddr {
+    let app = AppState::new(root, overlay, None);
     let router = clapier::router(app);
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await
@@ -69,6 +76,67 @@ async fn rabbit_fetches_bytecode_over_http10() {
         &bytecode[..],
         "bytecode must arrive intact"
     );
+}
+
+/// The tribe overlay: a request carrying the boot's `m` param gets its
+/// rabbit's file, an unknown or absent identity gets the common overlay,
+/// a file absent from the overlay falls back to the base tree, and a
+/// hostile `m` is ignored rather than reaching the filesystem.
+#[tokio::test]
+async fn overlay_routes_the_tribe() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let base = dir.path().join("base");
+    let overlay = dir.path().join("overlay");
+    for sub in [
+        "base/vl",
+        "overlay/common/vl",
+        "overlay/rabbits/0019db9c2815/vl",
+    ] {
+        std::fs::create_dir_all(dir.path().join(sub)).expect("mkdir");
+    }
+    std::fs::write(base.join("vl/bc.jsp"), b"BASE").expect("write");
+    std::fs::write(base.join("vl/crontab.forth"), b"FORTH").expect("write");
+    std::fs::write(overlay.join("common/vl/bc.jsp"), b"COMMON").expect("write");
+    std::fs::write(overlay.join("rabbits/0019db9c2815/vl/bc.jsp"), b"CANARY").expect("write");
+
+    let addr = spawn_server_with_overlay(base, Some(overlay)).await;
+    let cases: &[(&'static [u8], &'static [u8])] = &[
+        // The canary rabbit, exactly as the boot asks (double slash included).
+        (
+            b"GET /vl//bc.jsp?v=0.0.0.13&m=00:19:db:9c:28:15&h=4 HTTP/1.0\r\n\r\n",
+            b"CANARY",
+        ),
+        // Another rabbit: no dedicated tree, gets the common overlay.
+        (
+            b"GET /vl/bc.jsp?m=aa:bb:cc:dd:ee:ff HTTP/1.0\r\n\r\n",
+            b"COMMON",
+        ),
+        // No identity at all: common overlay still wins over base.
+        (b"GET /vl/bc.jsp HTTP/1.0\r\n\r\n", b"COMMON"),
+        // Not in the overlay: base tree serves it.
+        (
+            b"GET /vl/crontab.forth?m=00:19:db:9c:28:15 HTTP/1.0\r\n\r\n",
+            b"FORTH",
+        ),
+        // Hostile identity: ignored, treated as absent.
+        (b"GET /vl/bc.jsp?m=../../etc HTTP/1.0\r\n\r\n", b"COMMON"),
+    ];
+    for (request, expected) in cases {
+        let response = tokio::task::spawn_blocking(move || raw_request(addr, request))
+            .await
+            .expect("join");
+        let header_end = response
+            .windows(4)
+            .position(|w| w == b"\r\n\r\n")
+            .expect("end of headers")
+            + 4;
+        assert_eq!(
+            &response[header_end..],
+            *expected,
+            "request: {}",
+            String::from_utf8_lossy(request)
+        );
+    }
 }
 
 #[tokio::test]

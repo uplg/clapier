@@ -21,22 +21,23 @@ use axum::{
 };
 use clapier_journal::{Hit, Journal};
 use clapier_pages as pages;
+use clapier_vl::ContentTree;
 use tracing::info;
 
 /// Number of requests kept for the status page.
 const HISTORY: usize = 200;
 
 pub struct AppState {
-    pub root: PathBuf,
+    pub tree: ContentTree,
     pub rabbit: Option<IpAddr>,
     started: Instant,
     journal: Journal,
 }
 
 impl AppState {
-    pub fn new(root: PathBuf, rabbit: Option<IpAddr>) -> Arc<Self> {
+    pub fn new(base: PathBuf, overlay: Option<PathBuf>, rabbit: Option<IpAddr>) -> Arc<Self> {
         Arc::new(Self {
-            root,
+            tree: ContentTree { base, overlay },
             rabbit,
             started: Instant::now(),
             journal: Journal::new(HISTORY),
@@ -58,7 +59,7 @@ async fn serve_content(
     method: Method,
     uri: Uri,
 ) -> Response {
-    let mut resp = clapier_vl::respond(&app.root, &method, &uri).await;
+    let mut resp = clapier_vl::respond(&app.tree, &method, &uri).await;
     record(&app, peer.ip(), method.clone(), &uri, &resp);
     if method == Method::HEAD {
         *resp.body_mut() = Body::empty();
@@ -111,9 +112,17 @@ async fn status_page(State(app): State<Arc<AppState>>) -> Html<String> {
             rabbit: Some(hit.peer) == app.rabbit,
         })
         .collect();
+    let serving = match &app.tree.overlay {
+        Some(overlay) => format!(
+            "{} + overlay {}",
+            app.tree.base.display(),
+            overlay.display()
+        ),
+        None => app.tree.base.display().to_string(),
+    };
     Html(pages::render_status(
         app.started.elapsed(),
-        &app.root.display().to_string(),
+        &serving,
         &rabbit,
         &rows,
     ))

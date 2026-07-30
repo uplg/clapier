@@ -7,8 +7,11 @@
 //! - full bodies with `Content-Length`, never chunked;
 //! - `Connection: close` on every response - the rabbit reads until the
 //!   peer closes;
-//! - query string ignored when resolving files (`bc.jsp?sn=…`);
-//! - path traversal refused, percent-encoded or not.
+//! - query string ignored when resolving paths - except the `m` param
+//!   (the rabbit's MAC, sent by the boot as `bc.jsp?v=…&m=00:19:…`),
+//!   which routes the request through the tribe overlay;
+//! - path traversal refused, percent-encoded or not; a malformed `m` is
+//!   ignored, never an error - the rabbit must eat.
 
 use std::path::{Component, Path, PathBuf};
 
@@ -18,15 +21,41 @@ use axum::{
     response::Response,
 };
 
-/// Serves `uri` from the content tree under `root`.
+/// What a request is resolved against: an optional overlay in front of
+/// the base tree. Overlay lookups are tried per-rabbit
+/// (`<overlay>/rabbits/<mac>/…`, when the request carries a valid `m`)
+/// then common (`<overlay>/common/…`), and serve regular files only;
+/// directories, index files and listings remain the base tree's business.
+pub struct ContentTree {
+    pub base: PathBuf,
+    pub overlay: Option<PathBuf>,
+}
+
+/// Serves `uri` from the content tree.
 ///
 /// Always returns a complete response (including errors) honoring the
 /// rabbit contract. `HEAD` gets the same headers as `GET`; the caller is
 /// expected to drop the body (axum does not do it for fallback handlers).
-pub async fn respond(root: &Path, method: &Method, uri: &Uri) -> Response {
+pub async fn respond(tree: &ContentTree, method: &Method, uri: &Uri) -> Response {
     if *method != Method::GET && *method != Method::HEAD {
         return plain(StatusCode::METHOD_NOT_ALLOWED, "method not allowed\n");
     }
+    if let Some(overlay) = &tree.overlay {
+        let mut roots = Vec::with_capacity(2);
+        if let Some(id) = rabbit_id(uri) {
+            roots.push(overlay.join("rabbits").join(id));
+        }
+        roots.push(overlay.join("common"));
+        for root in roots {
+            // fs::read fails on directories, so a hit here is a real file.
+            if let Some(path) = resolve(&root, uri.path())
+                && let Ok(bytes) = tokio::fs::read(&path).await
+            {
+                return base_response(StatusCode::OK, content_type(&path), bytes);
+            }
+        }
+    }
+    let root = &tree.base;
     let Some(path) = resolve(root, uri.path()) else {
         return plain(StatusCode::BAD_REQUEST, "path rejected\n");
     };
@@ -78,6 +107,28 @@ fn resolve(root: &Path, raw: &str) -> Option<PathBuf> {
         }
     }
     Some(clean)
+}
+
+/// Extracts the rabbit identity from the `m` query param and normalizes
+/// it to 12 lowercase hex chars - the only alphabet that may ever reach a
+/// filesystem path. Accepts `00:19:db:9c:28:15` (the boot's format) or
+/// bare `0019db9c2815`; anything else is treated as absent.
+fn rabbit_id(uri: &Uri) -> Option<String> {
+    let raw = uri
+        .query()?
+        .split('&')
+        .find_map(|kv| kv.strip_prefix("m="))?;
+    let decoded = percent_encoding::percent_decode_str(raw)
+        .decode_utf8()
+        .ok()?;
+    let parts: Vec<&str> = decoded.split(':').collect();
+    let joined = match parts.len() {
+        1 => decoded.to_string(),
+        6 if parts.iter().all(|p| p.len() == 2) => parts.concat(),
+        _ => return None,
+    };
+    (joined.len() == 12 && joined.bytes().all(|b| b.is_ascii_hexdigit()))
+        .then(|| joined.to_ascii_lowercase())
 }
 
 fn content_type(path: &Path) -> &'static str {
@@ -170,6 +221,34 @@ mod tests {
             PathBuf::from("/srv/vl/config.forth")
         );
         assert_eq!(resolve(root, "/").unwrap(), PathBuf::from("/srv"));
+    }
+
+    #[test]
+    fn rabbit_id_accepts_boot_and_bare_forms() {
+        let boot: Uri = "/vl/bc.jsp?v=0.0.0.13&m=00:19:DB:9c:28:15&h=4"
+            .parse()
+            .unwrap();
+        assert_eq!(rabbit_id(&boot).as_deref(), Some("0019db9c2815"));
+        let bare: Uri = "/status?m=0019db9c2815".parse().unwrap();
+        assert_eq!(rabbit_id(&bare).as_deref(), Some("0019db9c2815"));
+    }
+
+    #[test]
+    fn rabbit_id_rejects_everything_else() {
+        for query in [
+            "m=..",
+            "m=../../etc/passwd",
+            "m=%2e%2e%2f%2e%2e",
+            "m=00:19:db:9c:28",       // five groups
+            "m=00:19:db:9c:28:15:aa", // seven groups
+            "m=00:19:db:9c:28:1g",    // non-hex
+            "m=0019db9c2815ff",       // too long
+            "m=",
+            "x=1",
+        ] {
+            let uri: Uri = format!("/vl/bc.jsp?{query}").parse().unwrap();
+            assert_eq!(rabbit_id(&uri), None, "query accepted: {query}");
+        }
     }
 
     #[test]
