@@ -1,0 +1,9 @@
+[package]
+name = "clapier-pages"
+description = "Human-facing HTML for the burrow: status page, directory listings"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]

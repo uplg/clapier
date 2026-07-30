@@ -1,0 +1,21 @@
+[package]
+name = "clapier"
+description = "HTTP burrow for the Nabaztag:tag - serves the rabbit's bytecode and /vl resources"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+axum.workspace = true
+clap.workspace = true
+clapier-journal.workspace = true
+clapier-pages.workspace = true
+clapier-vl.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

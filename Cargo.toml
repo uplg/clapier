@@ -1,0 +1,32 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/clapier",
+    "crates/clapier-journal",
+    "crates/clapier-pages",
+    "crates/clapier-vl",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/uplg/clapier"
+
+[workspace.dependencies]
+anyhow = "1"
+axum = "0.8"
+clap = { version = "4", features = ["derive"] }
+http = "1"
+percent-encoding = "2"
+tempfile = "3"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "net", "fs"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+clapier-journal = { path = "crates/clapier-journal" }
+clapier-pages = { path = "crates/clapier-pages" }
+clapier-vl = { path = "crates/clapier-vl" }
+
+[profile.release]
+lto = true

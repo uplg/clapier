@@ -1,0 +1,13 @@
+[package]
+name = "clapier-vl"
+description = "File service speaking the Nabaztag's dialect: full bodies, Connection: close, query string ignored"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+axum.workspace = true
+clapier-pages.workspace = true
+percent-encoding.workspace = true
+tokio.workspace = true
