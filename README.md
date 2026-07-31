@@ -11,8 +11,9 @@ which teaches the 2006 rabbit WPA2/WPA3.
 Grab the [latest release](https://github.com/uplg/clapier/releases):
 archives for Linux x86_64 and aarch64 (static, NAS and Raspberry Pi
 friendly), macOS Apple Silicon and Windows, each with the server, the
-choreography encoder and the firmware flasher, plus the firmware, the
-rabbit bytecode and checksums. No toolchain, no Python, nothing else.
+choreography encoder, the firmware flasher and the rabbit's brain
+(`garenne.bin`), plus the firmware and checksums. No toolchain, no
+Python, nothing else.
 
 Still have a rabbit in a cupboard? The whole journey:
 
@@ -37,12 +38,14 @@ Still have a rabbit in a cupboard? The whole journey:
    key - the rabbit derives the WPA key material itself, any normal
    passphrase works. Then scroll to "Advanced configuration" and put
    your server's IP in the service address field. Save: the rabbit
-   reboots, joins your network and fetches everything from your
-   clapier from now on.
-4. **Give it a brain.** Copy the release's `garenne-vX.Y.Z.bin` to
-   `overlay/rabbits/<mac>/vl/bc.jsp` (lowercase MAC, no colons) and
-   power-cycle. Ears, button, choreographies, streamed MP3.
-5. **Open the burrow.** `http://<server>/_clapier` for the fleet,
+   reboots, joins your network, and on its first bytecode fetch
+   clapier adopts it - `garenne.bin` (in the archive, next to the
+   server) is installed into `overlay/rabbits/<mac>/` on the spot and
+   served. Ears, button, choreographies, streamed MP3, nothing to
+   copy. The installed file is yours to inspect or replace;
+   `--garenne` points elsewhere, and a `bc.jsp` already in the
+   overlay always wins over adoption.
+4. **Open the burrow.** `http://<server>/_clapier` for the fleet,
    `/_clapier/pilot` to drive from the browser.
 
 The rabbit refetches its bytecode at every boot, so the worst a bad

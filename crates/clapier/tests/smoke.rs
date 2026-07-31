@@ -14,7 +14,15 @@ async fn spawn_server_with_overlay(
     root: Option<std::path::PathBuf>,
     overlay: Option<std::path::PathBuf>,
 ) -> SocketAddr {
-    let app = AppState::new(root, overlay, None, None);
+    spawn_server_full(root, overlay, None).await
+}
+
+async fn spawn_server_full(
+    root: Option<std::path::PathBuf>,
+    overlay: Option<std::path::PathBuf>,
+    garenne: Option<std::path::PathBuf>,
+) -> SocketAddr {
+    let app = AppState::new(root, overlay, None, None, garenne);
     let router = clapier::router(app);
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await
@@ -249,4 +257,78 @@ async fn missing_file_gives_404() {
 
     let head = String::from_utf8_lossy(&response).to_ascii_lowercase();
     assert!(head.contains(" 404 "), "response: {head}");
+}
+
+#[tokio::test]
+async fn adoption_installs_garenne_on_first_boot_fetch() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let overlay = dir.path().join("overlay");
+    std::fs::create_dir(&overlay).expect("mkdir overlay");
+    let bin = dir.path().join("garenne.bin");
+    let bytecode: Vec<u8> = (0..=255u8).cycle().take(2048).collect();
+    std::fs::write(&bin, &bytecode).expect("write garenne.bin");
+
+    let addr = spawn_server_full(None, Some(overlay.clone()), Some(bin)).await;
+    let response = tokio::task::spawn_blocking(move || {
+        raw_request(
+            addr,
+            b"GET /vl/bc.jsp?sn=0013&v=13&m=00:11:22:aa:bb:cc HTTP/1.0\r\n\r\n",
+        )
+    })
+    .await
+    .expect("join");
+
+    let header_end = response
+        .windows(4)
+        .position(|w| w == b"\r\n\r\n")
+        .expect("header end")
+        + 4;
+    assert!(
+        response.starts_with(b"HTTP/1.0 200"),
+        "adoption should serve the bytecode"
+    );
+    assert_eq!(
+        &response[header_end..],
+        &bytecode[..],
+        "served bytes differ"
+    );
+
+    // The burrow is materialized: the next fetch is a plain overlay hit,
+    // and the file can be inspected or overridden by a deploy.
+    let installed = overlay.join("rabbits/001122aabbcc/vl/bc.jsp");
+    assert_eq!(
+        std::fs::read(&installed).expect("installed bc.jsp"),
+        bytecode
+    );
+}
+
+#[tokio::test]
+async fn adoption_stays_off_without_garenne_or_mac() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let overlay = dir.path().join("overlay");
+    std::fs::create_dir(&overlay).expect("mkdir overlay");
+    let bin = dir.path().join("garenne.bin");
+    std::fs::write(&bin, b"brain").expect("write garenne.bin");
+
+    // No garenne configured: a boot fetch stays a 404.
+    let addr = spawn_server_with_overlay(None, Some(overlay.clone())).await;
+    let response = tokio::task::spawn_blocking(move || {
+        raw_request(
+            addr,
+            b"GET /vl/bc.jsp?sn=0013&v=13&m=00:11:22:aa:bb:cc HTTP/1.0\r\n\r\n",
+        )
+    })
+    .await
+    .expect("join");
+    assert!(response.starts_with(b"HTTP/1.0 404"));
+
+    // Garenne configured but no MAC in the query: nothing to adopt.
+    let addr = spawn_server_full(None, Some(overlay.clone()), Some(bin)).await;
+    let response = tokio::task::spawn_blocking(move || {
+        raw_request(addr, b"GET /vl/bc.jsp?sn=0013 HTTP/1.0\r\n\r\n")
+    })
+    .await
+    .expect("join");
+    assert!(response.starts_with(b"HTTP/1.0 404"));
+    assert!(!overlay.join("rabbits").exists(), "no burrow should appear");
 }

@@ -29,7 +29,8 @@ jobs:
 
   server:
     name: server ${{ matrix.name }}
-    needs: version
+    # garenne rides inside each archive so adoption works out of the box.
+    needs: [version, garenne]
     strategy:
       fail-fast: false
       matrix:
@@ -60,6 +61,9 @@ jobs:
       - name: musl toolchain
         if: matrix.musl
         run: sudo apt-get update -qq && sudo apt-get install -y -qq musl-tools
+      - uses: actions/download-artifact@v8
+        with:
+          name: garenne
       - name: build
         run: cargo build --release --locked --target ${{ matrix.target }} -p clapier -p clapier-chor -p clapier-flash
       - name: package
@@ -73,6 +77,7 @@ jobs:
           cp "target/${{ matrix.target }}/release/chor-encode$ext" "dist/$name/"
           cp "target/${{ matrix.target }}/release/flash-nabaztag$ext" "dist/$name/"
           cp README.md LICENSE "dist/$name/"
+          cp garenne-*.bin "dist/$name/garenne.bin"
           [ "${{ runner.os }}" = "macOS" ] && cp deploy/fr.uplg.clapier.plist "dist/$name/"
           cd dist
           if [ "${{ runner.os }}" = "Windows" ]; then

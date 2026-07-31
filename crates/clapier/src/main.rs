@@ -46,6 +46,12 @@ struct Args {
     /// the poller off
     #[arg(long, default_value_t = 30)]
     poll_secs: u64,
+
+    /// The garenne bytecode installed automatically for a rabbit whose
+    /// burrow has no bc.jsp yet (the adoption); absent file at the
+    /// default path just turns adoption off
+    #[arg(long, default_value = "garenne.bin")]
+    garenne: PathBuf,
 }
 
 #[tokio::main]
@@ -87,7 +93,32 @@ async fn main() -> Result<()> {
         })
         .transpose()?;
 
-    let app = AppState::new(root.clone(), overlay.clone(), args.rabbit, args.say_script);
+    // Adoption is best-effort: the bin beside the binary (the release
+    // archive layout) turns it on; a missing default path is normal.
+    let garenne = match args.garenne.canonicalize() {
+        Ok(bin) => {
+            info!(
+                "adoption on: {} serves as bc.jsp for new rabbits",
+                bin.display()
+            );
+            Some(bin)
+        }
+        Err(_) => {
+            info!(
+                "adoption off: no garenne at {} (pass --garenne to enable)",
+                args.garenne.display()
+            );
+            None
+        }
+    };
+
+    let app = AppState::new(
+        root.clone(),
+        overlay.clone(),
+        args.rabbit,
+        args.say_script,
+        garenne,
+    );
     if args.pulse_port != 0 {
         tokio::spawn(clapier::listen_pulses(app.clone(), args.pulse_port));
     }

@@ -36,6 +36,9 @@ pub struct AppState {
     /// The speech pipeline lives Mac-side (TTS model, encoder); the
     /// pilot page shells out to it when configured.
     pub say_script: Option<PathBuf>,
+    /// The garenne bytecode to install for rabbits whose burrow has no
+    /// bc.jsp yet (the adoption); unset turns adoption off.
+    pub garenne: Option<PathBuf>,
     started: Instant,
     journal: Journal,
 }
@@ -46,15 +49,43 @@ impl AppState {
         overlay: Option<PathBuf>,
         rabbit: Option<IpAddr>,
         say_script: Option<PathBuf>,
+        garenne: Option<PathBuf>,
     ) -> Arc<Self> {
         Arc::new(Self {
             tree: ContentTree { base, overlay },
             rabbit,
             fleet: Fleet::new(),
             say_script,
+            garenne,
             started: Instant::now(),
             journal: Journal::new(HISTORY),
         })
+    }
+
+    /// The adoption: install garenne as `bc.jsp` in the rabbit's burrow.
+    /// Atomic within the overlay filesystem, so the rabbit never fetches
+    /// half a brain. Returns false when adoption is off or impossible.
+    fn adopt(&self, mac: &str) -> bool {
+        let (Some(bin), Some(overlay)) = (&self.garenne, &self.tree.overlay) else {
+            return false;
+        };
+        let dir = overlay.join("rabbits").join(mac).join("vl");
+        let install = || -> std::io::Result<()> {
+            std::fs::create_dir_all(&dir)?;
+            let tmp = dir.join(".bc.jsp.tmp");
+            std::fs::copy(bin, &tmp)?;
+            std::fs::rename(&tmp, dir.join("bc.jsp"))
+        };
+        match install() {
+            Ok(()) => {
+                info!("🐰 adopted {mac}: garenne installed in its burrow");
+                true
+            }
+            Err(e) => {
+                info!("could not adopt {mac}: {e}");
+                false
+            }
+        }
     }
 }
 
@@ -424,6 +455,15 @@ async fn serve_content(
     let mut resp = clapier_vl::respond(&app.tree, &method, &uri).await;
     if let Some(mac) = clapier_vl::rabbit_id(&uri) {
         let boot = uri.path().ends_with("bc.jsp");
+        // A rabbit asking for its bytecode and finding an empty burrow
+        // gets garenne installed on the spot, then served normally.
+        if boot
+            && method == Method::GET
+            && resp.status() == axum::http::StatusCode::NOT_FOUND
+            && app.adopt(&mac)
+        {
+            resp = clapier_vl::respond(&app.tree, &method, &uri).await;
+        }
         app.fleet.seen_http(&mac, peer.ip(), boot, Instant::now());
     }
     record(&app, peer.ip(), method.clone(), &uri, &resp);
