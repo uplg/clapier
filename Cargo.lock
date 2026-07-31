@@ -190,10 +190,13 @@ dependencies = [
  "anyhow",
  "axum",
  "clap",
+ "clapier-chor",
  "clapier-fleet",
  "clapier-journal",
  "clapier-pages",
  "clapier-vl",
+ "percent-encoding",
+ "serde",
  "socket2",
  "tempfile",
  "tokio",
@@ -565,6 +568,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4148590afebada386688f18773da617792bf2ef03ffc1e4cbd2b1d45b023e0ba"
 dependencies = [
  "serde_core",
+ "serde_derive",
 ]
 
 [[package]]
@@ -726,6 +730,7 @@ version = "1.53.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "202caea871b69668250d242070849eb495be178ed697a3e98aebce5bc81a0bed"
 dependencies = [
+ "bytes",
  "libc",
  "mio",
  "pin-project-lite",

@@ -101,6 +101,19 @@ privileges.)
 
 The rest of the URL space belongs to the served content.
 
+## Pilot page
+
+`http://<server>/_clapier/pilot` drives the rabbits from a browser: one
+block per rabbit with its polled state (rssi, ears, audio, choreo) and
+the controls - ping, salute, the .chor library, a text box to compose a
+choreography in the Violet API dialect (encoded server side by
+`clapier-chor`), and a sentence box for the voice when `--say-script`
+points at a speech pipeline. Every command goes through a gate that
+bounds the arguments; the volume floor of 40 is written into it, in
+memory of a power supply.
+
+`--poll-secs` sets the /status polling cadence (default 30, 0 off).
+
 ## Fleet table
 
 One line per rabbit, built from what already travels on the wire -

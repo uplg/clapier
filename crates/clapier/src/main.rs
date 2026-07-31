@@ -36,6 +36,16 @@ struct Args {
     /// the fleet table's pulses; 0 turns the listener off
     #[arg(long, default_value_t = 9999)]
     pulse_port: u16,
+
+    /// Script the pilot page's speech box runs (one argument: the
+    /// sentence); unset leaves the box disabled
+    #[arg(long)]
+    say_script: Option<PathBuf>,
+
+    /// Seconds between /status polls of the fleet's rabbits; 0 turns
+    /// the poller off
+    #[arg(long, default_value_t = 30)]
+    poll_secs: u64,
 }
 
 #[tokio::main]
@@ -77,9 +87,15 @@ async fn main() -> Result<()> {
         })
         .transpose()?;
 
-    let app = AppState::new(root.clone(), overlay.clone(), args.rabbit);
+    let app = AppState::new(root.clone(), overlay.clone(), args.rabbit, args.say_script);
     if args.pulse_port != 0 {
         tokio::spawn(clapier::listen_pulses(app.clone(), args.pulse_port));
+    }
+    if args.poll_secs != 0 {
+        tokio::spawn(clapier::poll_statuses(
+            app.clone(),
+            std::time::Duration::from_secs(args.poll_secs),
+        ));
     }
     let router = clapier::router(app);
     let listener = tokio::net::TcpListener::bind(args.bind)

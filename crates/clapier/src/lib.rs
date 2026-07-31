@@ -8,21 +8,22 @@ use std::{
     net::{IpAddr, SocketAddr},
     path::PathBuf,
     sync::Arc,
-    time::Instant,
+    time::{Duration, Instant},
 };
 
 use axum::{
     Router,
     body::Body,
-    extract::{ConnectInfo, State},
+    extract::{ConnectInfo, Form, Query, State},
     http::{Method, Uri, header},
-    response::{Html, Response},
-    routing::get,
+    response::{Html, Redirect, Response},
+    routing::{get, post},
 };
 use clapier_fleet::Fleet;
 use clapier_journal::{Hit, Journal};
 use clapier_pages as pages;
 use clapier_vl::ContentTree;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tracing::info;
 
 /// Number of requests kept for the status page.
@@ -32,6 +33,9 @@ pub struct AppState {
     pub tree: ContentTree,
     pub rabbit: Option<IpAddr>,
     pub fleet: Fleet,
+    /// The speech pipeline lives Mac-side (TTS model, encoder); the
+    /// pilot page shells out to it when configured.
+    pub say_script: Option<PathBuf>,
     started: Instant,
     journal: Journal,
 }
@@ -41,15 +45,154 @@ impl AppState {
         base: Option<PathBuf>,
         overlay: Option<PathBuf>,
         rabbit: Option<IpAddr>,
+        say_script: Option<PathBuf>,
     ) -> Arc<Self> {
         Arc::new(Self {
             tree: ContentTree { base, overlay },
             rabbit,
             fleet: Fleet::new(),
+            say_script,
             started: Instant::now(),
             journal: Journal::new(HISTORY),
         })
     }
+}
+
+/// Ask a rabbit its `/status` page, in its own dialect: HTTP/1.0, read
+/// until the connection closes.
+async fn fetch_status(ip: IpAddr) -> anyhow::Result<String> {
+    let exchange = async {
+        let mut sock = tokio::net::TcpStream::connect((ip, 80)).await?;
+        sock.write_all(b"GET /status HTTP/1.0\r\n\r\n").await?;
+        let mut buf = Vec::new();
+        sock.read_to_end(&mut buf).await?;
+        let text = String::from_utf8_lossy(&buf).into_owned();
+        Ok(text
+            .split_once("\r\n\r\n")
+            .map(|(_, body)| body.to_string())
+            .unwrap_or_default())
+    };
+    tokio::time::timeout(Duration::from_secs(8), exchange).await?
+}
+
+/// Enrich the fleet with each named rabbit's `/status`, forever. One
+/// rabbit at a time and a gentle cadence: the radio is shared and the
+/// dashboard is a guest on it.
+pub async fn poll_statuses(app: Arc<AppState>, every: Duration) {
+    loop {
+        tokio::time::sleep(every).await;
+        let targets: Vec<IpAddr> = app
+            .fleet
+            .snapshot()
+            .iter()
+            .filter(|r| r.mac.is_some())
+            .map(|r| r.ip)
+            .collect();
+        for ip in targets {
+            if let Ok(body) = fetch_status(ip).await {
+                app.fleet
+                    .status(ip, clapier_fleet::parse_status(&body), Instant::now());
+            }
+        }
+    }
+}
+
+/// One command over the rabbit's UDP control port, reply awaited.
+async fn ctl_send(ip: IpAddr, cmd: &str) -> anyhow::Result<String> {
+    let sock = tokio::net::UdpSocket::bind(("0.0.0.0", 0)).await?;
+    sock.send_to(format!("grn1 {cmd}").as_bytes(), (ip, 9998))
+        .await?;
+    let mut buf = [0u8; 2048];
+    let (n, _) = tokio::time::timeout(Duration::from_secs(3), sock.recv_from(&mut buf)).await??;
+    Ok(String::from_utf8_lossy(&buf[..n]).into_owned())
+}
+
+/// The pilot page's gate: only commands a button should reach, with
+/// their arguments bounded. The volume floor is not a style choice:
+/// below 40 the amplifier's draw has already crashed a supply and
+/// wedged the radio.
+pub fn vet_ctl(cmd: &str) -> Result<String, String> {
+    let words: Vec<&str> = cmd.split_whitespace().collect();
+    match words.as_slice() {
+        [] => Err("empty command".to_string()),
+        [verb @ ("ping" | "dance" | "reboot" | "stop" | "conf" | "heap" | "fetch")] => {
+            Ok((*verb).to_string())
+        }
+        ["vol", n] => match n.parse::<u32>() {
+            Ok(n) if (40..=254).contains(&n) => Ok(format!("vol {n}")),
+            Ok(_) => Err("vol stays at 40 or above, the supply remembers".to_string()),
+            Err(_) => Err("vol wants a number".to_string()),
+        },
+        ["color", c] if c.len() == 6 && c.chars().all(|ch| ch.is_ascii_hexdigit()) => {
+            Ok(format!("color {c}"))
+        }
+        ["ears", a, b] => match (a.parse::<u32>(), b.parse::<u32>()) {
+            (Ok(a), Ok(b)) if a <= 16 && b <= 16 => Ok(format!("ears {a} {b}")),
+            _ => Err("ears wants two positions in 0..16".to_string()),
+        },
+        [verb @ ("chor" | "play"), path]
+            if path.starts_with("/vl/") && !path.contains("..") && path.len() < 128 =>
+        {
+            Ok(format!("{verb} {path}"))
+        }
+        _ => Err(format!("command not allowed: {cmd}")),
+    }
+}
+
+fn mac_ok(mac: &str) -> bool {
+    mac.len() == 12
+        && mac
+            .chars()
+            .all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_gate_lets_buttons_through() {
+        assert_eq!(vet_ctl("ping"), Ok("ping".to_string()));
+        assert_eq!(vet_ctl("  dance  "), Ok("dance".to_string()));
+        assert_eq!(vet_ctl("vol 40"), Ok("vol 40".to_string()));
+        assert_eq!(vet_ctl("color 7c5cff"), Ok("color 7c5cff".to_string()));
+        assert_eq!(vet_ctl("ears 8 8"), Ok("ears 8 8".to_string()));
+        assert_eq!(
+            vet_ctl("chor /vl/config/chor/taichi.chor"),
+            Ok("chor /vl/config/chor/taichi.chor".to_string())
+        );
+    }
+
+    #[test]
+    fn the_gate_remembers_the_supply() {
+        assert!(vet_ctl("vol 39").is_err());
+        assert!(vet_ctl("vol 0").is_err());
+    }
+
+    #[test]
+    fn the_gate_stops_everything_else() {
+        assert!(vet_ctl("").is_err());
+        assert!(vet_ctl("log 0").is_err());
+        assert!(vet_ctl("reassoc").is_err());
+        assert!(vet_ctl("chor /etc/passwd").is_err());
+        assert!(vet_ctl("chor /vl/../secret").is_err());
+        assert!(vet_ctl("ears 99 0").is_err());
+        assert!(vet_ctl("color zzzzzz").is_err());
+    }
+
+    #[test]
+    fn macs_are_twelve_lowercase_hex() {
+        assert!(mac_ok("0019db9c2815"));
+        assert!(!mac_ok("0019DB9C2815"));
+        assert!(!mac_ok("0019db9c28"));
+        assert!(!mac_ok("0019db9c28xy"));
+    }
+}
+
+fn pilot_redirect(msg: &str) -> Redirect {
+    use percent_encoding::{NON_ALPHANUMERIC, utf8_percent_encode};
+    let encoded = utf8_percent_encode(msg, NON_ALPHANUMERIC).to_string();
+    Redirect::to(&format!("/_clapier/pilot?m={encoded}"))
 }
 
 /// The log channel is shared: the ad-hoc listener scripts want the same
@@ -98,8 +241,175 @@ pub fn router(app: Arc<AppState>) -> Router {
     Router::new()
         .route("/_clapier", get(status_page))
         .route("/_clapier/health", get(|| async { "ok" }))
+        .route("/_clapier/pilot", get(pilot_page))
+        .route("/_clapier/ctl", post(ctl_post))
+        .route("/_clapier/dance", post(dance_post))
+        .route("/_clapier/say", post(say_post))
         .fallback(serve_content)
         .with_state(app)
+}
+
+/// Every .chor the overlay can serve, as the /vl paths the rabbits ask.
+async fn chor_library(app: &AppState) -> Vec<String> {
+    async fn collect(dir: PathBuf, prefix: &str, out: &mut Vec<String>) {
+        if let Ok(mut entries) = tokio::fs::read_dir(dir).await {
+            while let Ok(Some(entry)) = entries.next_entry().await {
+                let name = entry.file_name().to_string_lossy().into_owned();
+                if name.ends_with(".chor") {
+                    out.push(format!("{prefix}/{name}"));
+                }
+            }
+        }
+    }
+    let mut out = Vec::new();
+    if let Some(overlay) = &app.tree.overlay {
+        collect(
+            overlay.join("common/vl/config/chor"),
+            "/vl/config/chor",
+            &mut out,
+        )
+        .await;
+        for rabbit in app.fleet.snapshot() {
+            if let Some(mac) = rabbit.mac {
+                collect(
+                    overlay.join("rabbits").join(&mac).join("vl/chor"),
+                    "/vl/chor",
+                    &mut out,
+                )
+                .await;
+            }
+        }
+    }
+    out.sort();
+    out.dedup();
+    out
+}
+
+#[derive(serde::Deserialize)]
+pub struct PilotQuery {
+    m: Option<String>,
+}
+
+async fn pilot_page(State(app): State<Arc<AppState>>, Query(q): Query<PilotQuery>) -> Html<String> {
+    let rabbits: Vec<pages::PilotRabbit> = app
+        .fleet
+        .snapshot()
+        .into_iter()
+        .filter_map(|r| {
+            let mac = r.mac?;
+            let state = r.status.as_ref().map_or_else(String::new, |s| {
+                let mut parts = Vec::new();
+                if let Some(rssi) = s.rssi {
+                    parts.push(format!("rssi {rssi}"));
+                }
+                if let Some(ears) = &s.ears {
+                    parts.push(format!("ears {ears}"));
+                }
+                if let Some(audio) = &s.audio {
+                    parts.push(format!("audio {audio}"));
+                }
+                if let Some(choreo) = &s.choreo {
+                    parts.push(format!("choreo {choreo}"));
+                }
+                parts.join(" - ")
+            });
+            Some(pages::PilotRabbit {
+                mac,
+                ip: r.ip.to_string(),
+                state,
+            })
+        })
+        .collect();
+    let chors = chor_library(&app).await;
+    Html(pages::render_pilot(
+        &rabbits,
+        &chors,
+        q.m.as_deref(),
+        app.say_script.is_some(),
+    ))
+}
+
+#[derive(serde::Deserialize)]
+pub struct CtlForm {
+    ip: String,
+    cmd: String,
+}
+
+async fn ctl_post(State(app): State<Arc<AppState>>, Form(form): Form<CtlForm>) -> Redirect {
+    let Ok(ip) = form.ip.parse::<IpAddr>() else {
+        return pilot_redirect("bad ip");
+    };
+    if !app.fleet.snapshot().iter().any(|r| r.ip == ip) {
+        return pilot_redirect("that ip is not a rabbit the fleet knows");
+    }
+    match vet_ctl(&form.cmd) {
+        Err(reason) => pilot_redirect(&reason),
+        Ok(cmd) => match ctl_send(ip, &cmd).await {
+            Ok(reply) => pilot_redirect(&reply),
+            Err(_) => pilot_redirect("no reply (rebooting, dancing hard, or asleep)"),
+        },
+    }
+}
+
+#[derive(serde::Deserialize)]
+pub struct DanceForm {
+    mac: String,
+    ip: String,
+    cdl: String,
+}
+
+async fn dance_post(State(app): State<Arc<AppState>>, Form(form): Form<DanceForm>) -> Redirect {
+    if !mac_ok(&form.mac) {
+        return pilot_redirect("bad mac");
+    }
+    let Ok(ip) = form.ip.parse::<IpAddr>() else {
+        return pilot_redirect("bad ip");
+    };
+    let Some(overlay) = app.tree.overlay.clone() else {
+        return pilot_redirect("no overlay to write into");
+    };
+    match clapier_chor::encode_cdl(&form.cdl) {
+        Err(reason) => pilot_redirect(&format!("choreography rejected: {reason}")),
+        Ok(bytes) => {
+            let dir = overlay.join("rabbits").join(&form.mac).join("vl/chor");
+            let tmp = dir.join(".pilot.chor.tmp");
+            let dest = dir.join("pilot.chor");
+            let written = async {
+                tokio::fs::create_dir_all(&dir).await?;
+                tokio::fs::write(&tmp, &bytes).await?;
+                tokio::fs::rename(&tmp, &dest).await
+            }
+            .await;
+            if written.is_err() {
+                return pilot_redirect("could not install the choreography");
+            }
+            match ctl_send(ip, "chor /vl/chor/pilot.chor").await {
+                Ok(reply) => pilot_redirect(&format!("{} bytes installed, {reply}", bytes.len())),
+                Err(_) => pilot_redirect("installed, but the rabbit did not answer"),
+            }
+        }
+    }
+}
+
+#[derive(serde::Deserialize)]
+pub struct SayForm {
+    text: String,
+}
+
+async fn say_post(State(app): State<Arc<AppState>>, Form(form): Form<SayForm>) -> Redirect {
+    let Some(script) = app.say_script.clone() else {
+        return pilot_redirect("speech not configured: start clapier with --say-script");
+    };
+    let text = form.text.trim().to_string();
+    if text.is_empty() || text.len() > 300 {
+        return pilot_redirect("a sentence, not a silence nor a novel (300 chars max)");
+    }
+    // Generation takes tens of seconds on the TTS model; fire and
+    // forget, the rabbit will start speaking when the MP3 lands.
+    match tokio::process::Command::new(&script).arg(&text).spawn() {
+        Ok(_) => pilot_redirect("Estelle is thinking, she speaks in a few seconds"),
+        Err(_) => pilot_redirect("could not start the speech pipeline"),
+    }
 }
 
 async fn serve_content(
@@ -171,6 +481,9 @@ async fn status_page(State(app): State<Arc<AppState>>) -> Html<String> {
                 .as_ref()
                 .map(|p| std::time::Duration::from_secs(p.uptime_s)),
             link: r.pulse.as_ref().map(|p| p.link),
+            rssi: r.status.as_ref().and_then(|s| s.rssi),
+            audio: r.status.as_ref().and_then(|s| s.audio.clone()),
+            choreo: r.status.as_ref().and_then(|s| s.choreo.clone()),
         })
         .collect();
     let rows: Vec<pages::Row> = snapshot

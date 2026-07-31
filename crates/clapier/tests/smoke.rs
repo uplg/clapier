@@ -14,7 +14,7 @@ async fn spawn_server_with_overlay(
     root: Option<std::path::PathBuf>,
     overlay: Option<std::path::PathBuf>,
 ) -> SocketAddr {
-    let app = AppState::new(root, overlay, None);
+    let app = AppState::new(root, overlay, None, None);
     let router = clapier::router(app);
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await
@@ -199,6 +199,40 @@ async fn overlay_alone_serves_and_404s_the_rest() {
     .expect("join");
     let head = String::from_utf8_lossy(&missing).to_ascii_lowercase();
     assert!(head.contains(" 404 "), "response: {head}");
+}
+
+/// The pilot page answers even with an empty fleet, and the control
+/// endpoint refuses an IP the fleet never heard of.
+#[tokio::test]
+async fn pilot_page_stands_and_guards() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    std::fs::create_dir(dir.path().join("vl")).expect("mkdir vl");
+
+    let addr = spawn_server(dir.path().to_path_buf()).await;
+    let page = tokio::task::spawn_blocking(move || {
+        raw_request(addr, b"GET /_clapier/pilot HTTP/1.0\r\n\r\n")
+    })
+    .await
+    .expect("join");
+    let text = String::from_utf8_lossy(&page);
+    assert!(text.contains("pilot"), "page: {text}");
+    assert!(text.contains("no named rabbit yet"), "page: {text}");
+
+    let refused = tokio::task::spawn_blocking(move || {
+        raw_request(
+            addr,
+            b"POST /_clapier/ctl HTTP/1.0\r\ncontent-type: application/x-www-form-urlencoded\r\n\
+content-length: 29\r\n\r\nip=192.168.1.99&cmd=reboot%20",
+        )
+    })
+    .await
+    .expect("join");
+    let text = String::from_utf8_lossy(&refused);
+    assert!(text.contains("303"), "response: {text}");
+    assert!(
+        text.to_lowercase().contains("location:"),
+        "response: {text}"
+    );
 }
 
 #[tokio::test]

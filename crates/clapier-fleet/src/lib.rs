@@ -44,6 +44,39 @@ pub fn parse_pulse(line: &str) -> Option<Pulse> {
     })
 }
 
+/// What a polled `/status` answer carries, beyond what the pulse
+/// already said. The rabbit's page is line-oriented `key=value`.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Status {
+    pub rssi: Option<i64>,
+    pub ears: Option<String>,
+    pub audio: Option<String>,
+    pub choreo: Option<String>,
+    pub tcp_retx: Option<u64>,
+    pub reassoc: Option<u64>,
+}
+
+/// Parses a `/status` body. Unknown keys are ignored, missing keys stay
+/// `None`: the dashboard renders what this garenne version publishes.
+pub fn parse_status(body: &str) -> Status {
+    let mut status = Status::default();
+    for line in body.lines() {
+        let Some((key, value)) = line.trim().split_once('=') else {
+            continue;
+        };
+        match key {
+            "rssi" => status.rssi = value.parse().ok(),
+            "ears" => status.ears = Some(value.to_string()),
+            "audio" => status.audio = Some(value.to_string()),
+            "choreo" => status.choreo = Some(value.to_string()),
+            "tcp_retx" => status.tcp_retx = value.parse().ok(),
+            "reassoc" => status.reassoc = value.parse().ok(),
+            _ => {}
+        }
+    }
+    status
+}
+
 /// One rabbit as the wire has shown it so far. A pulse heard before any
 /// HTTP request yields an entry with an IP and no MAC; the first
 /// request carrying `m=` claims it.
@@ -56,6 +89,8 @@ pub struct Rabbit {
     pub last_boot: Option<Instant>,
     pub last_pulse: Option<Instant>,
     pub pulse: Option<Pulse>,
+    pub status: Option<Status>,
+    pub last_status: Option<Instant>,
 }
 
 /// A thread-safe register of every rabbit seen since startup. Bounded
@@ -89,6 +124,8 @@ impl Fleet {
                             last_boot: None,
                             last_pulse: None,
                             pulse: None,
+                            status: None,
+                            last_status: None,
                         });
                         rabbits.last_mut().expect("just pushed")
                     }
@@ -117,7 +154,19 @@ impl Fleet {
                 last_boot: None,
                 last_pulse: Some(at),
                 pulse: Some(pulse),
+                status: None,
+                last_status: None,
             }),
+        }
+    }
+
+    /// A polled `/status` answer from `ip`. Unknown IPs are ignored:
+    /// the poller only asks rabbits the register already knows.
+    pub fn status(&self, ip: IpAddr, status: Status, at: Instant) {
+        let mut rabbits = self.rabbits.lock().expect("fleet lock");
+        if let Some(entry) = rabbits.iter_mut().find(|r| r.ip == ip) {
+            entry.status = Some(status);
+            entry.last_status = Some(at);
         }
     }
 
@@ -147,6 +196,39 @@ mod tests {
 
     fn ip(last: u8) -> IpAddr {
         IpAddr::V4(Ipv4Addr::new(192, 168, 1, last))
+    }
+
+    #[test]
+    fn status_page_parses_line_by_line() {
+        let s = parse_status(
+            "garenne=0.11.0\r\nrssi=-54\r\nears=0,0\r\naudio=playing 12B\r\n\
+             choreo=idle\r\ntcp_retx=3\r\nreassoc=0\r\nnovel_key=x\r\n",
+        );
+        assert_eq!(s.rssi, Some(-54));
+        assert_eq!(s.ears.as_deref(), Some("0,0"));
+        assert_eq!(s.audio.as_deref(), Some("playing 12B"));
+        assert_eq!(s.choreo.as_deref(), Some("idle"));
+        assert_eq!(s.tcp_retx, Some(3));
+        assert_eq!(s.reassoc, Some(0));
+    }
+
+    #[test]
+    fn status_lands_on_the_known_rabbit_only() {
+        let fleet = Fleet::new();
+        fleet.pulse(
+            ip(155),
+            Pulse {
+                version: "0.11.0".into(),
+                uptime_s: 1,
+                link: 4,
+            },
+            Instant::now(),
+        );
+        fleet.status(ip(155), parse_status("rssi=-40\r\n"), Instant::now());
+        fleet.status(ip(99), parse_status("rssi=-1\r\n"), Instant::now());
+        let snap = fleet.snapshot();
+        assert_eq!(snap.len(), 1);
+        assert_eq!(snap[0].status.as_ref().and_then(|s| s.rssi), Some(-40));
     }
 
     #[test]
