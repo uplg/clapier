@@ -195,6 +195,7 @@ dependencies = [
  "clapier-journal",
  "clapier-pages",
  "clapier-vl",
+ "libc",
  "percent-encoding",
  "serde",
  "socket2",

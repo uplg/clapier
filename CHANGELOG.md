@@ -9,12 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- The Violet shelf (`docs/violet/`): the original Metal reference (676
+  pages), the grammar and garbage collector papers, the WiFi driver
+  documentation, the VM natives table and the original boot and nominal
+  bytecode sources, mirrored from Sylvain Huet's site with attribution
+  so they outlive any single website. Marked `linguist-vendored`.
+- `garenne-ctl`: the rabbit remote in Rust, in every platform archive.
+  One-shot commands over the UDP control port and a `listen` mode for
+  the timestamped log channel; replaces the Python scripts, which are
+  gone.
 - This changelog.
 - `cargo-deny` guards licenses, advisories and dependency sources, locally
   (`just deny`) and in CI.
 - A `justfile` gathering the everyday recipes: build, checks, the garenne
   suite, deploys and release cutting.
 - `CHANGELOG.md` rides in the release archives.
+
+### Changed
+
+- The MTL ABI document sheds its 2026 campaign notes and becomes the
+  timeless reference it was growing into.
 
 ## [0.1.3] - 2026-08-01
 

@@ -115,5 +115,5 @@ mv "$DEST_DIR/.$NAME.mp3.tmp" "$DEST"
 echo "installed $(stat -f %z "$DEST") bytes at /vl/say/$NAME.mp3 (engine $ENGINE)"
 
 if [[ $PLAY -eq 1 ]]; then
-  python3 "$ROOT/scripts/garenne-ctl.py" play "/vl/say/$NAME.mp3"
+  "${GARENNE_CTL:-$ROOT/target/release/garenne-ctl}" play "/vl/say/$NAME.mp3"
 fi

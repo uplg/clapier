@@ -16,9 +16,9 @@ which teaches the 2006 rabbit WPA2/WPA3.
 Grab the [latest release](https://github.com/uplg/clapier/releases):
 archives for Linux x86_64 and aarch64 (static, NAS and Raspberry Pi
 friendly), macOS Apple Silicon and Windows, each with the server, the
-choreography encoder, the firmware flasher and the rabbit's brain
-(`garenne.bin`), plus the firmware and checksums. No toolchain, no
-Python, nothing else.
+choreography encoder, the firmware flasher, the rabbit remote
+(`garenne-ctl`) and the rabbit's brain (`garenne.bin`), plus the
+firmware and checksums. No toolchain, no Python, nothing else.
 
 Still have a rabbit in a cupboard? The whole journey:
 
@@ -165,7 +165,12 @@ crates/
   clapier-pages    the pages for humans (status, pilot, listings)
 garenne/           the rabbit's embedded application (Metal bytecode,
                    our own IP/TCP/HTTP stack, served as vl/bc.jsp)
-scripts/           deploy, remote control, log listener, rabbit-say
+docs/violet/       the original Violet and Metal documentation,
+                   preserved (Sylvain Huet's reference, grammar, VM
+                   natives, boot and nominal sources)
+scripts/           deploy-garenne, rabbit-say, rabbit-dance,
+                   rabbit-weather (the remote and the log listener
+                   are the garenne-ctl binary)
 vendor/
   metal            the Metal toolchain (mtl compiler and simulator),
                    built inside the mtl-dev Docker image on demand

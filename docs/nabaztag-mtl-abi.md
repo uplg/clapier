@@ -57,7 +57,7 @@ Beyond the usual VM core (arith, strings, tables, control flow):
 | RFID     | `rfidGet`, `rfidGetList`, `rfidRead`, `rfidWrite` |
 | I2C      | `i2cRead`, `i2cWrite` |
 | System   | `time`, `time_ms`, `loopcb`, `reboot`, `gc`, `corePP`, `corePush`, `corePull`, `coreBit0`, `crypt`, `uncrypt` |
-| DANGER   | `flashFirmware` — the bytecode can reflash the C firmware. Never expose it in our application. |
+| DANGER   | `flashFirmware`: the bytecode can reflash the C firmware. Never expose it in our application. |
 
 ## The network reality (verified in our own C firmware, vendor/nabgcc)
 

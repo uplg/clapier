@@ -75,6 +75,7 @@ jobs:
           [ "${{ runner.os }}" = "Windows" ] && ext=".exe"
           cp "target/${{ matrix.target }}/release/clapier$ext" "dist/$name/"
           cp "target/${{ matrix.target }}/release/chor-encode$ext" "dist/$name/"
+          cp "target/${{ matrix.target }}/release/garenne-ctl$ext" "dist/$name/"
           cp "target/${{ matrix.target }}/release/flash-nabaztag$ext" "dist/$name/"
           cp README.md CHANGELOG.md LICENSE "dist/$name/"
           cp garenne-*.bin "dist/$name/garenne.bin"

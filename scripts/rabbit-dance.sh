@@ -67,5 +67,5 @@ mv "$DEST_DIR/.$NAME.chor.tmp" "$DEST_DIR/$NAME.chor"
 echo "installed $(stat -f %z "$DEST_DIR/$NAME.chor") bytes at /vl/chor/$NAME.chor"
 
 if [[ $PLAY -eq 1 ]]; then
-  python3 "$ROOT/scripts/garenne-ctl.py" chor "/vl/chor/$NAME.chor"
+  "${GARENNE_CTL:-$ROOT/target/release/garenne-ctl}" chor "/vl/chor/$NAME.chor"
 fi

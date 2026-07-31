@@ -50,3 +50,11 @@ release version:
     git tag -a "v{{version}}" -m "clapier v{{version}}"
     git push origin main "v{{version}}"
     echo "v{{version}} pushed; CI takes it from here"
+
+# One command to the rabbit's control port (just ctl ping, just ctl color 7c5cff)
+ctl *args:
+    cargo run --release -q -p clapier --bin garenne-ctl -- {{args}}
+
+# Watch the rabbits' log broadcasts, timestamped
+listen:
+    cargo run --release -q -p clapier --bin garenne-ctl -- listen

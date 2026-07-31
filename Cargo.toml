@@ -22,7 +22,7 @@ repository = "https://github.com/uplg/clapier"
 [workspace.dependencies]
 anyhow = "1"
 axum = "0.8"
-clap = { version = "4", features = ["derive"] }
+clap = { version = "4", features = ["derive", "env"] }
 serde = { version = "1", features = ["derive"] }
 http = "1"
 percent-encoding = "2"

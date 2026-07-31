@@ -129,7 +129,7 @@ pub async fn poll_statuses(app: Arc<AppState>, every: Duration) {
 }
 
 /// One command over the rabbit's UDP control port, reply awaited.
-async fn ctl_send(ip: IpAddr, cmd: &str) -> anyhow::Result<String> {
+pub async fn ctl_send(ip: IpAddr, cmd: &str) -> anyhow::Result<String> {
     let sock = tokio::net::UdpSocket::bind(("0.0.0.0", 0)).await?;
     sock.send_to(format!("grn1 {cmd}").as_bytes(), (ip, 9998))
         .await?;
@@ -230,7 +230,7 @@ fn pilot_redirect(msg: &str) -> Redirect {
 /// broadcast datagrams clapier does. SO_REUSEPORT makes the port a
 /// party line instead of a fight - every bound socket receives each
 /// broadcast (they also set it).
-fn pulse_socket(port: u16) -> std::io::Result<tokio::net::UdpSocket> {
+pub fn log_socket(port: u16) -> std::io::Result<tokio::net::UdpSocket> {
     use socket2::{Domain, Protocol, Socket, Type};
     let sock = Socket::new(Domain::IPV4, Type::DGRAM, Some(Protocol::UDP))?;
     // Windows has no SO_REUSEPORT; the party line stays a unix affair and
@@ -247,7 +247,7 @@ fn pulse_socket(port: u16) -> std::io::Result<tokio::net::UdpSocket> {
 /// joining the port. Non-pulse chatter (`button: click`, reassoc
 /// traces) is left to the human listener scripts.
 pub async fn listen_pulses(app: Arc<AppState>, port: u16) {
-    let sock = match pulse_socket(port) {
+    let sock = match log_socket(port) {
         Ok(sock) => sock,
         Err(err) => {
             tracing::warn!("cannot hear pulses, udp {port} unavailable: {err}");
