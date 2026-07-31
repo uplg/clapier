@@ -72,6 +72,11 @@ The file service speaks the rabbit's 2006 dialect: `Connection: close`,
 complete bodies with `Content-Length`, query strings ignored for file
 resolution, path traversal refused.
 
+A [justfile](justfile) carries these as recipes for those who have
+[just](https://github.com/casey/just) (`just serve` for a quick look
+on :8080); every raw command stays in this README for those who do
+not.
+
 ## Pages
 
 - `/_clapier` - uptime, last visit, fleet table, recent requests;
@@ -101,6 +106,8 @@ $ cd vendor/pocket-tts && cargo build --release -p pocket-tts-cli \
 $ ./scripts/rabbit-say.sh "Bonjour."
 ```
 
+(Or `just say "Bonjour."` once pocket-tts is built.)
+
 ## Hacking on garenne
 
 The application the rabbit runs: cooperative scheduler, LLC/SNAP
@@ -113,6 +120,8 @@ $ ./garenne/build.sh test    # the golden suite in the simulator
 $ ./garenne/build.sh         # device build -> garenne/build/garenne.bin
 $ ./scripts/deploy-garenne.sh --rabbit 00:19:db:9c:28:15
 ```
+
+(Or `just garenne-test`, `just garenne`, `just deploy <mac>`.)
 
 ## launchd service (macOS)
 
@@ -133,11 +142,15 @@ Stop with `launchctl bootout gui/$UID/fr.uplg.clapier`.
 $ cargo test      # including a smoke test that speaks HTTP/1.0 like the rabbit
 $ cargo clippy --all-targets -- -D warnings
 $ cargo fmt --check
+$ cargo deny check
 ```
 
+(Or `just check` and `just deny`.)
+
 Releases are cut by tagging: bump the workspace version, tag `vX.Y.Z`,
-push. CI builds every platform, golden-tests the bytecode, attaches
-the latest firmware and publishes.
+push, and CI builds every platform, golden-tests the bytecode, attaches
+the latest firmware and publishes. `just release X.Y.Z` does the whole
+dance after checking the tree is clean.
 
 ## Architecture
 
