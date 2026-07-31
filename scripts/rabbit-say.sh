@@ -10,9 +10,12 @@
 # Options:
 #   --rabbit MAC    target rabbit (default 0019db9c2815); accepts
 #                   00:19:db:9c:28:15 or 0019db9c2815
-#   --voice SPEC    pocket engine: hf:// URL, .safetensors embedding or
-#                   .wav to clone (default: Kyutai Estelle, french_24l);
+#   --voice SPEC    pocket engine: a Kyutai voice name, hf:// URL,
+#                   .safetensors embedding or .wav to clone (default:
+#                   the model's language voice, Estelle for french_24l);
 #                   say engine: a macOS voice name (default Jacques)
+#   --temp T        pocket engine sampling temperature (default: the
+#                   model's recommended value from its config)
 #   --engine E      pocket (default) or say (the macOS fallback)
 #   --name FILE     mp3 basename under vl/say/ (default latest)
 #   --no-play       generate and install only, do not trigger playback
@@ -29,10 +32,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OVERLAY="$ROOT/garenne/overlay"
 POCKET_BIN="${POCKET_TTS_BIN:-$ROOT/vendor/pocket-tts/target/release/pocket-tts-cli}"
-ESTELLE="hf://kyutai/pocket-tts-without-voice-cloning/languages/french_24l/embeddings/estelle.safetensors"
 RABBIT="0019db9c2815"
 ENGINE="pocket"
 VOICE=""
+TEMP=""
 NAME="latest"
 PLAY=1
 TEXT=""
@@ -51,6 +54,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --rabbit) RABBIT="$(normalize_mac "$2")"; shift 2 ;;
     --voice) VOICE="$2"; shift 2 ;;
+    --temp) TEMP="$2"; shift 2 ;;
     --engine) ENGINE="$2"; shift 2 ;;
     --name) NAME="$2"; shift 2 ;;
     --no-play) PLAY=0; shift ;;
@@ -75,10 +79,14 @@ case "$ENGINE" in
       exit 1
     fi
     # Latency does not matter here, quality does: 8 flow-matching
-    # decode steps instead of lana's realtime 1.
-    "$POCKET_BIN" generate --quiet --use-metal --variant french_24l \
-      --voice "${VOICE:-$ESTELLE}" --eos-threshold=-3.0 \
-      --lsd-decode-steps 8 \
+    # decode steps instead of lana's realtime 1. No --voice means the
+    # model's language default (Estelle for french_24l); no --temp means
+    # the config's recommended temperature.
+    EXTRA=()
+    [[ -n "$VOICE" ]] && EXTRA+=(--voice "$VOICE")
+    [[ -n "$TEMP" ]] && EXTRA+=(--temperature "$TEMP")
+    "$POCKET_BIN" generate --quiet --use-metal --language french_24l \
+      --eos-threshold=-3.0 --lsd-decode-steps 8 ${EXTRA[@]+"${EXTRA[@]}"} \
       -t "$TEXT" -o "$TMP/say.wav"
     ;;
   say)
