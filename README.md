@@ -2,10 +2,13 @@
 
 The Nabaztag:tag's HTTP burrow - Rust edition 2024, [Axum](https://github.com/tokio-rs/axum).
 
-In 2026 a Nabaztag:tag speaks WPA2/WPA3 thanks to two firmware fixes
-([uplg/nabgcc](https://github.com/uplg/nabgcc), branch `wpa23`). All it
-still needs is a server handing it its bytecode and resources: that used
-to be a `python -m http.server` running in a terminal corner - unstable,
+In 2026 a Nabaztag:tag speaks WPA2/WPA3 and hears broadcast again
+thanks to four firmware fixes ([uplg/nabgcc](https://github.com/uplg/nabgcc),
+branch `wpa23-gtk`, proposed upstream): a PMK truncated by `strcpy`, a
+wrong cipher suite in the association request, `.bss.*` sections never
+zeroed at boot, and a group key that was never installed. All it still
+needs is a server handing it its bytecode and resources: that used to
+be a `python -m http.server` running in a terminal corner - unstable,
 silent, dead at the first crash. The clapier replaces it: a single
 binary, logs that tell the rabbit's life, a status page, and a `launchd`
 service that survives reboots.
