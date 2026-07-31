@@ -43,6 +43,15 @@ fun _garenne_button ev =
 fun _garenne_ear_moved n =
     log_send (strcat "ear touched: " (itoa n));;
 
+// While the rabbit speaks it looks alive: ears perked slightly apart,
+// a soft glow on the nose; back to rest when the voice ends. Fired on
+// playback edges only, so the look never sticks.
+fun _garenne_audio_state playing =
+    if playing then
+        (ears_goto 0 2; ears_goto 1 15; led LED_NOSE 0x803010; 0)
+    else
+        (ears_goto 0 0; ears_goto 1 0; led LED_NOSE RGB_BLACK; 0);;
+
 fun garenne_init =
     set garenne_boot_ms = time_ms;
     // The base LED breathes in our color: the rabbit is alive and ours.
@@ -53,8 +62,10 @@ fun garenne_init =
     link_init;
     set button_cb = #_garenne_button;
     set ears_moved_cb = #_garenne_ear_moved;
+    set audio_state_cb = #_garenne_audio_state;
     ears_init;
     button_init;
+    choreo_init;
     task_start_ex "heartbeat" 1000 #garenne_heartbeat;
     task_start_ex "link" 500 #garenne_link_watch;
     task_start_ex "pulse" 2000 #garenne_pulse;

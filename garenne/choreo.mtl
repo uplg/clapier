@@ -1,0 +1,95 @@
+// Timed choreographies: ears and LEDs dancing to a score.
+//
+// A score is a time-sorted list of steps [t_ms kind a b]; a 50 ms task
+// fires every step whose time has come. Steps only issue commands (an
+// ear move takes the time it takes); the score's job is to leave the
+// organs room to breathe. The base LED breathing is suspended for the
+// duration and resumes at the end.
+
+const CHOREO_TICK_MS = 50;;
+
+const CHO_LED = 0;;   // led a, color b
+const CHO_EAR = 1;;   // ear a, to position b
+const CHO_END = 2;;   // closes the score: restore the idle look
+
+var _cho_steps = nil;;
+var _cho_start = 0;;
+var _cho_name = "";;
+
+// The pure core: split a time-sorted score into what fires at elapsed
+// and what remains.
+fun _cho_split steps elapsed =
+    if steps == nil then [nil nil]
+    else let hd steps -> [t _ _ _] in
+    if t > elapsed then [nil steps]
+    else let _cho_split (tl steps) elapsed -> [due rest] in
+    [((hd steps) :: due) rest];;
+
+fun _cho_restore =
+    led LED_NOSE RGB_BLACK;
+    led LED_BODY_LEFT RGB_BLACK;
+    led LED_BODY_MIDDLE RGB_BLACK;
+    led LED_BODY_RIGHT RGB_BLACK;
+    set leds_breathing = 1;
+    set _cho_name = "";
+    0;;
+
+fun _cho_fire step =
+    let step -> [_ kind a b] in
+    if kind == CHO_LED then (led a b; 0)
+    else if kind == CHO_EAR then (ears_goto a b; 0)
+    else if kind == CHO_END then (set _cho_steps = nil; _cho_restore)
+    else 0;;
+
+fun _cho_fire_all l =
+    if l == nil then 0
+    else (_cho_fire (hd l); _cho_fire_all (tl l));;
+
+// Fire everything due at this elapsed time; CHO_END inside the due
+// batch wins over the remainder (a score ends where it says).
+fun _cho_advance elapsed =
+    let _cho_split _cho_steps elapsed -> [due rest] in
+    (
+        set _cho_steps = rest;
+        _cho_fire_all due;
+        0
+    );;
+
+fun _cho_task task =
+    if _cho_steps != nil then _cho_advance (time_ms - _cho_start)
+    else 0;
+    TaskRun;;
+
+// Start a score, replacing any running one (no restore in between: the
+// new score opens on whatever look the old one left).
+fun choreo_play name steps =
+    set _cho_name = name;
+    set _cho_steps = steps;
+    set _cho_start = time_ms;
+    set leds_breathing = 0;
+    0;;
+
+fun choreo_stop =
+    set _cho_steps = nil;
+    _cho_restore;;
+
+fun choreo_status =
+    if _cho_steps == nil then "idle" else _cho_name;;
+
+// The greeting: ears rise and wave while a violet ripple crosses the
+// body, then everything settles back. About five seconds of rabbit.
+fun choreo_salute =
+    [0 CHO_LED LED_NOSE 0x803010] ::
+    [0 CHO_EAR 0 8] :: [0 CHO_EAR 1 8] ::
+    [700 CHO_LED LED_BODY_LEFT 0x7c5cff] ::
+    [1000 CHO_LED LED_BODY_MIDDLE 0x7c5cff] ::
+    [1300 CHO_LED LED_BODY_RIGHT 0x7c5cff] ::
+    [1900 CHO_LED LED_BODY_LEFT 0] ::
+    [2200 CHO_LED LED_BODY_MIDDLE 0] ::
+    [2500 CHO_LED LED_BODY_RIGHT 0] ::
+    [2600 CHO_EAR 0 0] :: [2600 CHO_EAR 1 0] ::
+    [4800 CHO_END 0 0] :: nil;;
+
+fun choreo_init =
+    task_start_ex "choreo" CHOREO_TICK_MS #_cho_task;
+    0;;

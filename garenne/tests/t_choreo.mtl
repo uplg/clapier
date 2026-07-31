@@ -1,0 +1,75 @@
+// The choreography sequencer on its pure core, and the audio playback
+// edges the app dances to. Motors and LEDs are simulator stubs; what
+// is judged here is which steps fire when, and which edges the audio
+// state machine reports.
+
+var _t_cho_evs = nil;;
+
+fun _t_cho_rec playing = set _t_cho_evs = playing :: _t_cho_evs; 0;;
+
+fun _t_cho_len l = if l == nil then 0 else 1 + _t_cho_len (tl l);;
+
+fun _t_cho_split =
+    let [0 CHO_LED 0 1] :: [700 CHO_EAR 0 8] :: [700 CHO_LED 1 2] ::
+        [4800 CHO_END 0 0] :: nil -> score in
+    (
+        let _cho_split score 0 -> [due rest] in
+        (
+            t_int "t0 fires the opening step" (_t_cho_len due) 1;
+            t_int "t0 keeps the rest" (_t_cho_len rest) 3
+        );
+        let _cho_split score 699 -> [_ rest2] in
+        t_int "t699 has not reached the wave" (_t_cho_len rest2) 3;
+        let _cho_split score 700 -> [due3 rest3] in
+        (
+            t_int "t700 fires both wave steps" (_t_cho_len due3) 3;
+            t_int "t700 leaves the end" (_t_cho_len rest3) 1
+        );
+        let _cho_split score 9999 -> [due4 rest4] in
+        (
+            t_int "far future fires everything" (_t_cho_len due4) 4;
+            t_true "nothing remains" (rest4 == nil)
+        );
+        let _cho_split nil 100 -> [due5 _] in
+        t_true "empty score, empty due" (due5 == nil)
+    );;
+
+fun _t_cho_run =
+    choreo_play "salute" choreo_salute;
+    t_eq "a running score has a name" choreo_status "salute";
+    t_int "breathing suspended for the dance" leds_breathing 0;
+    _cho_advance 0;
+    t_int "opening fired, nine steps left" (_t_cho_len _cho_steps) 9;
+    _cho_advance 2600;
+    t_int "mid-score fired in order" (_t_cho_len _cho_steps) 1;
+    _cho_advance 4800;
+    t_true "the end clears the score" (_cho_steps == nil);
+    t_int "breathing resumes" leds_breathing 1;
+    t_eq "status settles idle" choreo_status "idle";
+    0;;
+
+fun _t_audio_edges =
+    audio_stop;
+    set audio_state_cb = #_t_cho_rec;
+    set _t_cho_evs = nil;
+    _aud_set_state AUD_BUFFER;
+    t_true "buffering fires nothing" (_t_cho_evs == nil);
+    _aud_set_state AUD_PLAY;
+    t_true "codec start fires playing" ((_t_cho_evs != nil) && ((hd _t_cho_evs) == 1));
+    _aud_set_state AUD_PLAY;
+    t_int "no repeat while playing" (_t_cho_len _t_cho_evs) 1;
+    _aud_set_state AUD_IDLE;
+    t_true "idle after playing fires rest" ((hd _t_cho_evs) == 0);
+    set _t_cho_evs = nil;
+    _aud_set_state AUD_BUFFER;
+    _aud_set_state AUD_IDLE;
+    t_true "a stream that never played restores nothing" (_t_cho_evs == nil);
+    set audio_state_cb = nil;
+    audio_stop;
+    0;;
+
+fun t_choreo =
+    _t_cho_split;
+    _t_cho_run;
+    _t_audio_edges;
+    0;;

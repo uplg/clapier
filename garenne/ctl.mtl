@@ -83,6 +83,8 @@ fun _ctl_run frame macsrc cmd =
     )
     else if !strcmp cmd "stop" then
         (audio_stop; _ctl_reply frame macsrc "ok stopped")
+    else if !strcmp cmd "dance" then
+        (choreo_play "salute" choreo_salute; _ctl_reply frame macsrc "ok dancing")
     else if ((strlen cmd) > 4) && (!vstrcmp cmd 0 "vol " 0 4) then
     (
         set audio_vol = atoi (strsub cmd 4 ((strlen cmd) - 4));
