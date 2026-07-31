@@ -202,6 +202,9 @@ fn pilot_redirect(msg: &str) -> Redirect {
 fn pulse_socket(port: u16) -> std::io::Result<tokio::net::UdpSocket> {
     use socket2::{Domain, Protocol, Socket, Type};
     let sock = Socket::new(Domain::IPV4, Type::DGRAM, Some(Protocol::UDP))?;
+    // Windows has no SO_REUSEPORT; the party line stays a unix affair and
+    // the fleet listener simply owns the port there.
+    #[cfg(unix)]
     sock.set_reuse_port(true)?;
     sock.set_nonblocking(true)?;
     sock.bind(&SocketAddr::from(([0, 0, 0, 0], port)).into())?;

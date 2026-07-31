@@ -23,9 +23,13 @@ in_toolchain() {
     -w /work/garenne/build mtl-dev bash -c "$1"
 }
 
-# The vendored tree carries sources only; compile the compiler and the
-# simulator inside the image the first time (or after a clean).
+# The vendored tree carries sources only; build the mtl-dev image if it
+# is missing, then compile the compiler and the simulator inside it the
+# first time (or after a clean).
 ensure_toolchain() {
+  if ! docker image inspect mtl-dev >/dev/null 2>&1; then
+    docker build --platform linux/amd64 -t mtl-dev "$ROOT/vendor/metal"
+  fi
   if [[ ! -x "$ROOT/vendor/metal/compiler/mtl_comp/mtl_comp" ]] \
     || [[ ! -x "$ROOT/vendor/metal/compiler/mtl_simu/mtl_simu" ]]; then
     in_toolchain "make -C $METAL/compiler"

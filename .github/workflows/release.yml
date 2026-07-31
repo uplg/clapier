@@ -1,0 +1,134 @@
+name: release
+
+# Tag vX.Y.Z -> binaries for every platform a rabbit's server could live
+# on, plus the garenne bytecode built and golden-tested in CI, published
+# as a GitHub release with checksums and generated notes.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  version:
+    name: tag matches Cargo.toml
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version="$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)"
+          if [ "$tag" != "$version" ]; then
+            echo "tag says $tag, Cargo.toml says $version" >&2
+            exit 1
+          fi
+
+  server:
+    name: server ${{ matrix.name }}
+    needs: version
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x86_64
+            runner: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            musl: true
+          - name: linux-aarch64
+            runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+            musl: true
+          - name: macos-aarch64
+            runner: macos-latest
+            target: aarch64-apple-darwin
+          - name: windows-x86_64
+            runner: windows-latest
+            target: x86_64-pc-windows-msvc
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: release-${{ matrix.name }}
+      - name: musl toolchain
+        if: matrix.musl
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq musl-tools
+      - name: build
+        run: cargo build --release --locked --target ${{ matrix.target }} -p clapier -p clapier-chor
+      - name: package
+        shell: bash
+        run: |
+          name="clapier-${GITHUB_REF_NAME}-${{ matrix.name }}"
+          mkdir -p "dist/$name"
+          ext=""
+          [ "${{ runner.os }}" = "Windows" ] && ext=".exe"
+          cp "target/${{ matrix.target }}/release/clapier$ext" "dist/$name/"
+          cp "target/${{ matrix.target }}/release/chor-encode$ext" "dist/$name/"
+          cp README.md LICENSE "dist/$name/"
+          [ "${{ runner.os }}" = "macOS" ] && cp deploy/fr.uplg.clapier.plist "dist/$name/"
+          cd dist
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            7z a "$name.zip" "$name" >/dev/null
+          else
+            tar -czf "$name.tar.gz" "$name"
+          fi
+          rm -r "$name"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: server-${{ matrix.name }}
+          path: dist/*
+          if-no-files-found: error
+
+  garenne:
+    name: garenne bytecode
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: mtl-dev image
+        run: docker build --platform linux/amd64 -t mtl-dev vendor/metal
+      - name: golden suite
+        run: ./garenne/build.sh test
+      - name: device build
+        run: |
+          ./garenne/build.sh
+          cp garenne/build/garenne.bin "garenne-${GITHUB_REF_NAME}.bin"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: garenne
+          path: garenne-*.bin
+          if-no-files-found: error
+
+  publish:
+    name: publish release
+    needs: [server, garenne]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: firmware from the latest uplg/nabgcc release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download --repo uplg/nabgcc --dir artifacts
+      - name: checksums
+        run: |
+          cd artifacts
+          sha256sum * > SHA256SUMS
+      - name: create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "clapier $GITHUB_REF_NAME" \
+            --generate-notes \
+            artifacts/*

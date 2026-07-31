@@ -78,7 +78,59 @@ $ cd vendor/pocket-tts && cargo build --release -p pocket-tts-cli \
 $ ./scripts/rabbit-say.sh "Bonjour."
 ```
 
-## Quick start
+## The release route
+
+Every tagged release ships ready-to-run archives, one per platform,
+no Rust toolchain required:
+
+| file | for |
+| --- | --- |
+| `clapier-vX.Y.Z-linux-x86_64.tar.gz` | any x86_64 Linux box or NAS (static musl build) |
+| `clapier-vX.Y.Z-linux-aarch64.tar.gz` | Raspberry Pi 4/5 and other 64-bit ARM boards (static musl build) |
+| `clapier-vX.Y.Z-macos-aarch64.tar.gz` | Apple Silicon Macs (the launchd plist rides along) |
+| `clapier-vX.Y.Z-windows-x86_64.zip` | Windows |
+| `garenne-vX.Y.Z.bin` | the rabbit's application bytecode, built and golden-tested in CI |
+| `Nab-wpa23-gtk-*.sim` | the WPA2/WPA3 firmware, hardware-proven, mirrored from the latest [uplg/nabgcc](https://github.com/uplg/nabgcc/releases) release |
+| `flash-nabaztag.py` | the firmware flasher (Python, stdlib only), rides along with the firmware |
+| `SHA256SUMS` | checksums for all of the above |
+
+Each archive holds the `clapier` server, the `chor-encode` choreography
+encoder, and this README.
+
+### Adopting a Nabaztag:tag in 2026
+
+Still have a rabbit in a cupboard? Here is the whole journey:
+
+1. **Firmware.** A stock Nabaztag:tag only speaks WEP/WPA1. Flash the
+   `wpa23-gtk` build once and it joins WPA2/WPA3 networks and hears
+   broadcasts again. The `.sim` and its flasher come with every
+   release: hold the head button while powering on, join the
+   `NabaztagXX` access point the rabbit opens, then
+   `python3 flash-nabaztag.py Nab-wpa23-gtk-*.sim`. The bootloader is
+   never touched, so a bad flash is always recoverable from the same
+   menu.
+2. **Server.** Download the archive for your machine, unpack, and run
+   `./clapier --bind 0.0.0.0:80 --overlay overlay`. Any always-on box
+   on your LAN will do - a Pi is plenty. On Linux, port 80 wants
+   either root or a one-time
+   `sudo setcap 'cap_net_bind_service=+ep' ./clapier`.
+3. **Point the rabbit at it.** In the rabbit's setup portal (hold the
+   head button while powering on), configure your WiFi and give your
+   server's IP as the platform address. Everything else the rabbit
+   ever fetches now comes from your clapier.
+4. **Give it a brain.** Drop the release's `garenne-vX.Y.Z.bin` into
+   `overlay/rabbits/<mac>/vl/bc.jsp` (lowercase MAC, no colons) and
+   power-cycle: the rabbit boots the garenne application - ears,
+   button, choreographies, streamed MP3, a heartbeat on UDP 9999.
+5. **Open the burrow.** `http://<server>/_clapier` shows the fleet at
+   a glance; `/_clapier/pilot` drives it from the browser: ping,
+   salute, choreographies composed on the page, and a sentence box
+   once `--say-script` points at a speech pipeline (see rabbit-say).
+
+The worst a bad bytecode costs is a power cycle - the rabbit refetches
+`bc.jsp` at every boot, so it never bricks.
+
+## Quick start (from source)
 
 ```console
 $ cargo build --release
