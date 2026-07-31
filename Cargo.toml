@@ -1,5 +1,8 @@
 [workspace]
 resolver = "3"
+# vendor/pocket-tts is its own Cargo workspace (the Kyutai Pocket TTS
+# Rust port); it is built on its own, not absorbed here.
+exclude = ["vendor/pocket-tts"]
 members = [
     "crates/clapier",
     "crates/clapier-fleet",
