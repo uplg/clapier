@@ -1,5 +1,10 @@
 # clapier 🐰
 
+[![ci](https://github.com/uplg/clapier/actions/workflows/ci.yml/badge.svg)](https://github.com/uplg/clapier/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/uplg/clapier)](https://github.com/uplg/clapier/releases)
+[![changelog](https://img.shields.io/badge/changelog-keep%20a%20changelog-E05735)](CHANGELOG.md)
+[![license](https://img.shields.io/github/license/uplg/clapier)](LICENSE)
+
 The Nabaztag:tag's HTTP burrow: one binary serves a rabbit its
 bytecode, its sounds and its choreographies, and gives you a status
 page, a browser cockpit and a fleet view. Pairs with the
