@@ -1,1 +1,5 @@
 /target
+/vendor/pocket-tts/target
+/vendor/metal/**/*.o
+/vendor/metal/compiler/mtl_comp/mtl_comp
+/vendor/metal/compiler/mtl_simu/mtl_simu
