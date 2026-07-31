@@ -16,10 +16,11 @@ service that survives reboots.
 ## What it serves
 
 At boot the rabbit contacts the "platform" configured in its bootstrap
-bytecode and fetches its application bytecode (`vl/bc.jsp`), its Forth
-scripts (`crontab.forth`, `hooks.forth`, ...), its MP3 surprises and its
-choreographies (`vl/config/`). The clapier serves that tree in the
-rabbit's exact dialect - a 2006 TCP stack inside a VM:
+bytecode and fetches its application bytecode (`vl/bc.jsp`), then
+whatever that application asks for: MP3s, spoken sentences (`vl/say/`),
+binary choreographies in the original Violet format (`vl/config/chor/`,
+`vl/chor/`). The clapier serves all of it in the rabbit's exact
+dialect - a 2006 TCP stack inside a VM:
 
 - **`Connection: close` on every response** - the rabbit reads until the
   connection closes;
