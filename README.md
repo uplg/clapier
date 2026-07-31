@@ -29,8 +29,16 @@ Still have a rabbit in a cupboard? The whole journey:
    `./clapier --bind 0.0.0.0:80 --overlay overlay`. Any always-on box
    on your LAN will do. On Linux, port 80 wants root or a one-time
    `sudo setcap 'cap_net_bind_service=+ep' ./clapier`.
-3. **Point the rabbit at it.** Back in the setup portal, configure
-   your WiFi and give your server's IP as the platform address.
+3. **Configure WiFi and point the rabbit at your server.** Put the
+   rabbit back in config mode (head button + power), join
+   `NabaztagXX` again and browse to `http://192.168.0.1`. The setup
+   page lists the networks it hears: pick yours, select its
+   encryption (WPA2 is the point of the new firmware), and type your
+   key - the rabbit derives the WPA key material itself, any normal
+   passphrase works. Then scroll to "Advanced configuration" and put
+   your server's IP in the service address field. Save: the rabbit
+   reboots, joins your network and fetches everything from your
+   clapier from now on.
 4. **Give it a brain.** Copy the release's `garenne-vX.Y.Z.bin` to
    `overlay/rabbits/<mac>/vl/bc.jsp` (lowercase MAC, no colons) and
    power-cycle. Ears, button, choreographies, streamed MP3.
