@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- The launchd template passes `--garenne` with an absolute path: agents
+  start from `/`, where the relative default never finds the brain, and
+  the adoption promise held everywhere but there.
+
 ## [0.1.4] - 2026-08-01
 
 ### Added

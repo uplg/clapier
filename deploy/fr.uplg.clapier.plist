@@ -8,6 +8,9 @@
         <string>/Users/you/clapier/target/release/clapier</string>
         <string>--bind</string><string>0.0.0.0:80</string>
         <string>--overlay</string><string>/Users/you/clapier/garenne/overlay</string>
+        <!-- launchd starts agents from /, so the adoption wants the
+             absolute path to the brain -->
+        <string>--garenne</string><string>/Users/you/clapier/garenne.bin</string>
         <string>--rabbit</string><string>192.168.1.155</string>
     </array>
     <key>RunAtLoad</key><true/>
