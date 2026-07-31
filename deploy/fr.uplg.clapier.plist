@@ -8,6 +8,7 @@
         <string>/Users/you/clapier/target/release/clapier</string>
         <string>--bind</string><string>0.0.0.0:80</string>
         <string>--root</string><string>/Users/you/nabaztag-content</string>
+        <string>--overlay</string><string>/Users/you/clapier/garenne/overlay</string>
         <string>--rabbit</string><string>192.168.1.155</string>
     </array>
     <key>RunAtLoad</key><true/>

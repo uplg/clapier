@@ -34,6 +34,44 @@ crates/
   clapier-fleet    the fleet register (one entry per rabbit, learned from the wire)
   clapier-journal  the request journal (bounded ring, thread-safe)
   clapier-pages    the pages for humans (status, listings)
+garenne/           the rabbit's embedded application (Metal bytecode,
+                   our own IP/TCP/HTTP stack, served as vl/bc.jsp)
+scripts/           deploy, remote control, log listener, rabbit-say
+vendor/
+  metal            the Metal toolchain (Sylvain Huet's mtl compiler and
+                   simulator), built inside the mtl-dev Docker image
+  pocket-tts       Kyutai Pocket TTS, native Rust port (candle), used
+                   by rabbit-say for the rabbit's speaking voice
+```
+
+## garenne
+
+The application the rabbit actually runs: cooperative scheduler, LLC/
+SNAP framing, ARP, ICMP, UDP, TCP client and server, HTTP on both
+sides, streamed MP3 to the VS1003, ears, button, watchdog. It is
+rewritten from scratch (the VM natives are the only contract) and
+tested by golden frames against independent Python vectors:
+
+```console
+$ ./garenne/build.sh test    # the golden suite in the simulator
+$ ./garenne/build.sh         # device build -> garenne/build/garenne.bin
+$ ./scripts/deploy-garenne.sh --rabbit 00:19:db:9c:28:15
+```
+
+A deploy lands in `garenne/overlay/rabbits/<mac>/vl/bc.jsp`; the rabbit
+refetches its bytecode at every boot, so the worst a bad build costs is
+a power cycle, never a brick.
+
+## rabbit-say
+
+Text to speech through the rabbit: Kyutai Pocket TTS (French, the
+Estelle voice) rendered as the mono 32 kHz MP3 shape the VS1003 has
+chewed since 2006, installed into the overlay and streamed on the spot:
+
+```console
+$ cd vendor/pocket-tts && cargo build --release -p pocket-tts-cli \
+    --no-default-features --features metal && cd ../..
+$ ./scripts/rabbit-say.sh "Bonjour."
 ```
 
 ## Quick start
@@ -66,7 +104,7 @@ nothing is asked of the rabbits:
 - the `m` query param (the MAC the boot sends on `bc.jsp?...&m=...`)
   binds a rabbit to its IP and dates its last boot fetch;
 - the garenne application broadcasts a pulse every 2 s on UDP 9999
-  (`garenne 0.8.2 up=42s link=4`); the clapier listens and remembers
+  (`garenne 0.9.0 up=42s link=4`); the clapier listens and remembers
   the running version, uptime and link state.
 
 `--pulse-port` moves the UDP listener, `--pulse-port 0` turns it off.
