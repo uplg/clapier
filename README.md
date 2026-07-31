@@ -178,6 +178,22 @@ vendor/
                    https://github.com/uplg/pocket-tts)
 ```
 
+## Standing on friendly shoulders
+
+- [Sylvain Huet](https://www.sylvain-huet.com) and the Violet team made
+  the rabbit, the Metal language and its VM, then released the
+  [complete sources](https://code.google.com/archive/p/nabaztag-source-code/source/default/source);
+  their documentation is lovingly preserved on
+  [the Violet shelf](docs/violet/README.md).
+- [RedoXyde's nabgcc](https://github.com/RedoXyde/nabgcc) kept the
+  Nabaztag:tag firmware alive and buildable all these years; our
+  [wpa23-gtk firmware](https://github.com/uplg/nabgcc) stands directly
+  on it.
+- [ServerlessNabaztag](https://github.com/andreax79/ServerlessNabaztag)
+  proved a rabbit could live without Violet's servers and its sources
+  were our first map of the VM's ABI; garenne ended up rewritten from
+  scratch, but someone had to show the way.
+
 ## License
 
-MIT. Inspired by the community project ServerlessNabaztag.
+MIT.
