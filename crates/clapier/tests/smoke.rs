@@ -139,6 +139,33 @@ async fn overlay_routes_the_tribe() {
     }
 }
 
+/// A boot fetch carrying `m=` must land the rabbit in the fleet table.
+#[tokio::test]
+async fn fleet_remembers_the_boot_fetch() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let vl = dir.path().join("vl");
+    std::fs::create_dir(&vl).expect("mkdir vl");
+    std::fs::write(vl.join("bc.jsp"), b"BC").expect("write bc.jsp");
+
+    let addr = spawn_server(dir.path().to_path_buf()).await;
+    tokio::task::spawn_blocking(move || {
+        raw_request(
+            addr,
+            b"GET /vl/bc.jsp?v=0.0.0.13&m=00:19:db:9c:28:15&h=4 HTTP/1.0\r\n\r\n",
+        )
+    })
+    .await
+    .expect("join");
+    let status =
+        tokio::task::spawn_blocking(move || raw_request(addr, b"GET /_clapier HTTP/1.0\r\n\r\n"))
+            .await
+            .expect("join");
+
+    let page = String::from_utf8_lossy(&status);
+    assert!(page.contains("0019db9c2815"), "fleet table: {page}");
+    assert!(page.contains("last bc.jsp"), "fleet table: {page}");
+}
+
 #[tokio::test]
 async fn missing_file_gives_404() {
     let dir = tempfile::tempdir().expect("tempdir");

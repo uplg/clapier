@@ -30,6 +30,11 @@ struct Args {
     /// Rabbit IP: its requests get a 🐰 tag in logs and on the status page
     #[arg(long)]
     rabbit: Option<IpAddr>,
+
+    /// UDP port of the rabbits' broadcast log channel, listened to for
+    /// the fleet table's pulses; 0 turns the listener off
+    #[arg(long, default_value_t = 9999)]
+    pulse_port: u16,
 }
 
 #[tokio::main]
@@ -64,6 +69,9 @@ async fn main() -> Result<()> {
         .transpose()?;
 
     let app = AppState::new(root.clone(), overlay.clone(), args.rabbit);
+    if args.pulse_port != 0 {
+        tokio::spawn(clapier::listen_pulses(app.clone(), args.pulse_port));
+    }
     let router = clapier::router(app);
     let listener = tokio::net::TcpListener::bind(args.bind)
         .await

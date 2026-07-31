@@ -112,8 +112,9 @@ fn resolve(root: &Path, raw: &str) -> Option<PathBuf> {
 /// Extracts the rabbit identity from the `m` query param and normalizes
 /// it to 12 lowercase hex chars - the only alphabet that may ever reach a
 /// filesystem path. Accepts `00:19:db:9c:28:15` (the boot's format) or
-/// bare `0019db9c2815`; anything else is treated as absent.
-fn rabbit_id(uri: &Uri) -> Option<String> {
+/// bare `0019db9c2815`; anything else is treated as absent. Public
+/// because the fleet register keys its entries on the same identity.
+pub fn rabbit_id(uri: &Uri) -> Option<String> {
     let raw = uri
         .query()?
         .split('&')

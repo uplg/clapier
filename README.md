@@ -31,6 +31,7 @@ rabbit's exact dialect - a 2006 TCP stack inside a VM:
 crates/
   clapier          the binary: CLI, router, request logging
   clapier-vl       the file service in the rabbit's dialect
+  clapier-fleet    the fleet register (one entry per rabbit, learned from the wire)
   clapier-journal  the request journal (bounded ring, thread-safe)
   clapier-pages    the pages for humans (status, listings)
 ```
@@ -51,11 +52,24 @@ privileges.)
 
 ## Status page
 
-- `http://<server>/_clapier` - uptime, the rabbit's last visit, recent
-  requests (refreshes every 5 s);
+- `http://<server>/_clapier` - uptime, the rabbit's last visit, the
+  fleet table, recent requests (refreshes every 5 s);
 - `http://<server>/_clapier/health` - `ok`.
 
 The rest of the URL space belongs to the served content.
+
+## Fleet table
+
+One line per rabbit, built from what already travels on the wire -
+nothing is asked of the rabbits:
+
+- the `m` query param (the MAC the boot sends on `bc.jsp?...&m=...`)
+  binds a rabbit to its IP and dates its last boot fetch;
+- the garenne application broadcasts a pulse every 2 s on UDP 9999
+  (`garenne 0.8.2 up=42s link=4`); the clapier listens and remembers
+  the running version, uptime and link state.
+
+`--pulse-port` moves the UDP listener, `--pulse-port 0` turns it off.
 
 ## launchd service (macOS)
 

@@ -190,14 +190,20 @@ dependencies = [
  "anyhow",
  "axum",
  "clap",
+ "clapier-fleet",
  "clapier-journal",
  "clapier-pages",
  "clapier-vl",
+ "socket2",
  "tempfile",
  "tokio",
  "tracing",
  "tracing-subscriber",
 ]
+
+[[package]]
+name = "clapier-fleet"
+version = "0.1.0"
 
 [[package]]
 name = "clapier-journal"

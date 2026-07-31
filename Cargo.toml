@@ -2,6 +2,7 @@
 resolver = "3"
 members = [
     "crates/clapier",
+    "crates/clapier-fleet",
     "crates/clapier-journal",
     "crates/clapier-pages",
     "crates/clapier-vl",
@@ -19,11 +20,13 @@ axum = "0.8"
 clap = { version = "4", features = ["derive"] }
 http = "1"
 percent-encoding = "2"
+socket2 = "0.6"
 tempfile = "3"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "net", "fs"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
+clapier-fleet = { path = "crates/clapier-fleet" }
 clapier-journal = { path = "crates/clapier-journal" }
 clapier-pages = { path = "crates/clapier-pages" }
 clapier-vl = { path = "crates/clapier-vl" }
