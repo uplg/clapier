@@ -130,6 +130,14 @@ pub struct Config {
     /// Overrides the heuristic when set.
     #[serde(default)]
     pub model_recommended_frames_after_eos: Option<usize>,
+    /// Model-recommended sampling temperature, used when the caller does not
+    /// pass one (e.g. the English checkpoints prefer 0.3 per human evals).
+    #[serde(default = "default_temperature")]
+    pub default_temperature: f32,
+}
+
+fn default_temperature() -> f32 {
+    defaults::TEMPERATURE
 }
 
 /// Load configuration from a YAML file
@@ -145,7 +153,11 @@ pub mod defaults {
     pub const LSD_DECODE_STEPS: usize = 1;
     pub const NOISE_CLAMP: Option<f32> = None;
     pub const EOS_THRESHOLD: f32 = -4.0;
-    pub const DEFAULT_VARIANT: &str = "b6369a24";
+    /// Upstream DEFAULT_LANGUAGE. The pre-language checkpoint "b6369a24"
+    /// (= english_2026-01) stays available as a variant.
+    pub const DEFAULT_VARIANT: &str = "english";
+    // TODO(upstream): make this dynamic since english_2026-04 supports bigger chunks
+    pub const MAX_TOKEN_PER_CHUNK: usize = 50;
 }
 
 #[cfg(test)]
