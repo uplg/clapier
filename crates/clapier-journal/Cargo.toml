@@ -3,6 +3,7 @@ name = "clapier-journal"
 description = "Bounded in-memory request journal for the burrow"
 version.workspace = true
 edition.workspace = true
+publish = false
 license.workspace = true
 repository.workspace = true
 

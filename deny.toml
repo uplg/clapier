@@ -1,0 +1,31 @@
+# cargo-deny: licenses, advisories and dependency hygiene.
+# Run locally with `just deny`; CI runs the same check.
+
+[advisories]
+version = 2
+yanked = "deny"
+
+[licenses]
+version = 2
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "Unicode-3.0",
+]
+
+[bans]
+# Duplicate dependency versions are a fact of life in async Rust; keep
+# them visible without failing the build over them.
+multiple-versions = "warn"
+wildcards = "deny"
+# The workspace's own crates reference each other by path, which is the
+# one wildcard shape we mean.
+allow-wildcard-paths = true
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"

@@ -3,6 +3,7 @@ name = "clapier-vl"
 description = "File service speaking the Nabaztag's dialect: full bodies, Connection: close, query string ignored"
 version.workspace = true
 edition.workspace = true
+publish = false
 license.workspace = true
 repository.workspace = true
 

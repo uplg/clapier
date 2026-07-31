@@ -3,6 +3,7 @@ name = "clapier-fleet"
 description = "Fleet register for the burrow: one entry per rabbit, learned from the wire"
 version.workspace = true
 edition.workspace = true
+publish = false
 license.workspace = true
 repository.workspace = true
 

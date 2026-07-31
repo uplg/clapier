@@ -3,6 +3,7 @@ name = "clapier-chor"
 description = "The Violet choreography text dialect (CDL) encoded to the binary chor the rabbit dances"
 version.workspace = true
 edition.workspace = true
+publish = false
 license.workspace = true
 repository.workspace = true
 

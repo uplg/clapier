@@ -3,6 +3,7 @@ name = "clapier"
 description = "HTTP burrow for the Nabaztag:tag - serves the rabbit's bytecode and /vl resources"
 version.workspace = true
 edition.workspace = true
+publish = false
 license.workspace = true
 repository.workspace = true
 
