@@ -74,9 +74,11 @@ case "$ENGINE" in
       echo "pocket-tts-cli not found at $POCKET_BIN (build it, or set POCKET_TTS_BIN, or --engine say)" >&2
       exit 1
     fi
-    # Generation settings matched to lana's Estelle tuning.
+    # Latency does not matter here, quality does: 8 flow-matching
+    # decode steps instead of lana's realtime 1.
     "$POCKET_BIN" generate --quiet --use-metal --variant french_24l \
       --voice "${VOICE:-$ESTELLE}" --eos-threshold=-3.0 \
+      --lsd-decode-steps 8 \
       -t "$TEXT" -o "$TMP/say.wav"
     ;;
   say)
@@ -89,9 +91,14 @@ case "$ENGINE" in
     ;;
 esac
 
-# Mono 32 kHz CBR 48 kbps: the era's shape, and at ~6 KB/s it flows
-# far under garenne's paced receive window.
-lame --quiet -m m --resample 32 -b 48 "$TMP/say.wav" "$TMP/say.mp3"
+# Mono 32 kHz CBR: the era's shape, and at ~8 KB/s it flows far under
+# garenne's paced receive window. The model speaks at -26 dB mean, way
+# under the Violet sounds it shares a speaker with, so the loudness is
+# normalized to speech level; ffmpeg also resamples 24 to 32 kHz much
+# more cleanly than lame would.
+ffmpeg -hide_banner -loglevel error -i "$TMP/say.wav" \
+  -af "loudnorm=I=-16:TP=-1.5:LRA=11" -ar 32000 -ac 1 \
+  -c:a libmp3lame -b:a 64k "$TMP/say.mp3"
 
 mkdir -p "$DEST_DIR"
 # Atomic within the same filesystem: the rabbit never streams half a file.
