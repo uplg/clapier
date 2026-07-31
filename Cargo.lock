@@ -185,7 +185,7 @@ checksum = "c8d4a3bb8b1e0c1050499d1815f5ab16d04f0959b233085fb31653fbfc9d98f9"
 
 [[package]]
 name = "clapier"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "axum",
@@ -206,11 +206,11 @@ dependencies = [
 
 [[package]]
 name = "clapier-chor"
-version = "0.1.1"
+version = "0.1.2"
 
 [[package]]
 name = "clapier-flash"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "clap",
@@ -220,22 +220,22 @@ dependencies = [
 
 [[package]]
 name = "clapier-fleet"
-version = "0.1.1"
+version = "0.1.2"
 
 [[package]]
 name = "clapier-journal"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "http",
 ]
 
 [[package]]
 name = "clapier-pages"
-version = "0.1.1"
+version = "0.1.2"
 
 [[package]]
 name = "clapier-vl"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "axum",
  "clapier-pages",
