@@ -202,6 +202,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "clapier-chor"
+version = "0.1.0"
+
+[[package]]
 name = "clapier-fleet"
 version = "0.1.0"
 

@@ -5,6 +5,7 @@ resolver = "3"
 exclude = ["vendor/pocket-tts"]
 members = [
     "crates/clapier",
+    "crates/clapier-chor",
     "crates/clapier-fleet",
     "crates/clapier-journal",
     "crates/clapier-pages",
