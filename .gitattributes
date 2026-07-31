@@ -1,0 +1,4 @@
+# The Violet shelf is preserved documentation, not our code: keep it
+# out of the language statistics and the diffs people review.
+docs/violet/** linguist-vendored
+docs/violet/** -diff

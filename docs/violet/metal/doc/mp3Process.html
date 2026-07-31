@@ -1,0 +1,59 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<body text="#ffc000" link="#ffc000" vlink="#ffc000" alink="#ffc000" bgcolor="#000000">
+ <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <title>mp3Process</title>
+ </head>
+<table border="0" cellspacing="0" cellpadding="2" width="100%"><tr bgcolor="#ffc000">
+ <td width="33%"><a href="mp3Freq.html" style="color:black;text-decoration:none"><img src="left.gif" border="0" hspace="5" align="top"><tt>Previous</a></td>
+ <td width="34%" align="center"><a href="Librairie_audio.html" style="color:black;text-decoration:none"><img src="up.gif" border="0" hspace="5" align="top"><tt>Up</a></td>
+ <td width="33%" align="right"><a href="mp3Stereo.html" style="color:black;text-decoration:none"><tt>Next<img src="right.gif" border="0" hspace="5" align="top"></a></td>
+</tr></table><br>
+<blockquote>
+
+<table border="0" width="60%"><tr bgcolor="#ffc000"><td>
+ <table border="0" cellpadding="2" width="100%">
+<tr style="color:black" bgcolor="#ffc000"> <td width=25%><b><tt>mp3Process</b></td> <td width=25% align=center><tt>= fun [</td> <td width=25%></td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td></td> <td><b><tt>MP3</td> <td><i><tt>_mp3_</td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td></td> <td><b><tt>S</td> <td><i><tt>_src_</td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td></td> <td><b><tt>I</td> <td><i><tt>_index_</td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td></td> <td><b><tt>I</td> <td><i><tt>_len_</td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td align=center><tt>]</td><td><b><tt>S</td><td></td>  </tr>
+ </table>
+</td></tr></table>
+
+<br>
+<tt>Décode des données mp3.
+</tt>
+<br><br>
+</blockquote>
+<b><tt>Paramètres</tt></b>
+<blockquote><table border="0">
+<tr><td><i><tt>_mp3_</i></td><td></td></tr>
+<tr><td></td><td><tt>Décodeur mp3
+</tt></td></tr>
+<tr><td><i><tt>_src_</i></td><td></td></tr>
+<tr><td></td><td><tt>Source des données mp3 à décoder
+</tt></td></tr>
+<tr><td><i><tt>_index_</i></td><td></td></tr>
+<tr><td></td><td><tt>Index des données dans la source
+</tt></td></tr>
+<tr><td><i><tt>_len_</i></td><td></td></tr>
+<tr><td></td><td><tt>Taille des données dans la source (nil : toutes les données à partir de l'index)
+</tt></td></tr>
+</table></blockquote>
+<b><tt>Valeur de retour</tt></b>
+<blockquote>
+<tt>Les données décodées. nil si pas assez de sources.
+</tt></blockquote>
+<b><tt>Remarque</tt></b>
+<blockquote>
+<tt>La taille des données à fournir semble poser des problèmes dans certains cas, notamment lorsque le fichier mp3 complet est transmis en une seule fois. Il est recommandé de conserver une taille faible, de l'ordre de 64ko.
+</tt></blockquote>
+<b><tt>Voir aussi...</tt></b>
+<blockquote>
+<a href="MP3.html" style="color:black;background-color:#ffc000;text-decoration:none"><tt>MP3</a>&nbsp&nbsp <a href="mp3Create.html" style="color:black;background-color:#ffc000;text-decoration:none"><tt>mp3Create</a>&nbsp&nbsp <a href="mp3Destroy.html" style="color:black;background-color:#ffc000;text-decoration:none"><tt>mp3Destroy</a>&nbsp&nbsp </blockquote>
+
+</body>
+</html>

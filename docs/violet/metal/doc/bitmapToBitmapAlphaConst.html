@@ -1,0 +1,81 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<body text="#ffc000" link="#ffc000" vlink="#ffc000" alink="#ffc000" bgcolor="#000000">
+ <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <title>bitmapToBitmapAlphaConst</title>
+ </head>
+<table border="0" cellspacing="0" cellpadding="2" width="100%"><tr bgcolor="#ffc000">
+ <td width="33%"><a href="bitmapToBitmapAlpha.html" style="color:black;text-decoration:none"><img src="left.gif" border="0" hspace="5" align="top"><tt>Previous</a></td>
+ <td width="34%" align="center"><a href="Librairie_Bitmap.html" style="color:black;text-decoration:none"><img src="up.gif" border="0" hspace="5" align="top"><tt>Up</a></td>
+ <td width="33%" align="right"><a href="bitmapToBitmapEor.html" style="color:black;text-decoration:none"><tt>Next<img src="right.gif" border="0" hspace="5" align="top"></a></td>
+</tr></table><br>
+<blockquote>
+
+<table border="0" width="60%"><tr bgcolor="#ffc000"><td>
+ <table border="0" cellpadding="2" width="100%">
+<tr style="color:black" bgcolor="#ffc000"> <td width=25%><b><tt>bitmapToBitmapAlphaConst</b></td> <td width=25% align=center><tt>= fun [</td> <td width=25%></td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td></td> <td><b><tt>Bitmap</td> <td><i><tt>_destination_</td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td></td> <td><b><tt>I</td> <td><i><tt>_xdest_</td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td></td> <td><b><tt>I</td> <td><i><tt>_ydest_</td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td></td> <td><b><tt>Bitmap</td> <td><i><tt>_source_</td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td></td> <td><b><tt>I</td> <td><i><tt>_xsrc_</td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td></td> <td><b><tt>I</td> <td><i><tt>_yscr_</td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td></td> <td><b><tt>I</td> <td><i><tt>_width_</td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td></td> <td><b><tt>I</td> <td><i><tt>_height_</td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td></td> <td><b><tt>I</td> <td><i><tt>_alpha_</td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td></td> <td><b><tt>I</td> <td><i><tt>_colorkey_</td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td align=center><tt>]</td><td><b><tt>Bitmap</td><td></td>  </tr>
+ </table>
+</td></tr></table>
+
+<br>
+<tt>Effectue une copie d'une zone de la bitmap source vers la bitmap destination, en effectuant une opération de type 'alpha-blending'
+avec un paramètre alpha constant.
+</tt>
+<br><br>
+</blockquote>
+<b><tt>Paramètres</tt></b>
+<blockquote><table border="0">
+<tr><td><i><tt>_destination_</i></td><td></td></tr>
+<tr><td></td><td><tt>N'importe quelle bitmap.
+</tt></td></tr>
+<tr><td><i><tt>_xdest_</i></td><td></td></tr>
+<tr><td></td><td><tt>Coordonnée 'x' de la destination.
+</tt></td></tr>
+<tr><td><i><tt>_ydest_</i></td><td></td></tr>
+<tr><td></td><td><tt>Coordonnée 'y' de la destination.
+</tt></td></tr>
+<tr><td><i><tt>_source_</i></td><td></td></tr>
+<tr><td></td><td><tt>N'importe quelle bitmap.
+</tt></td></tr>
+<tr><td><i><tt>_xsrc_</i></td><td></td></tr>
+<tr><td></td><td><tt>Coordonnée 'x' de la source.
+</tt></td></tr>
+<tr><td><i><tt>_yscr_</i></td><td></td></tr>
+<tr><td></td><td><tt>Coordonnée 'y' de la source.
+</tt></td></tr>
+<tr><td><i><tt>_width_</i></td><td></td></tr>
+<tr><td></td><td><tt>Largeur de la zone à copier. Si nil, on considère la largeur de la bitmap source.
+</tt></td></tr>
+<tr><td><i><tt>_height_</i></td><td></td></tr>
+<tr><td></td><td><tt>Hauteur de la zone à copier. Si nil, on considère la hauteur de la bitmap source.
+</tt></td></tr>
+<tr><td><i><tt>_alpha_</i></td><td></td></tr>
+<tr><td></td><td><tt>Valeur alpha (de 0 à 255) à appliquer pour la copie.
+</tt></td></tr>
+<tr><td><i><tt>_colorkey_</i></td><td></td></tr>
+<tr><td></td><td><tt>Couleur RGB de la source à considérer comme transparente lors de la copie (aucune si ce paramètre vaut nil).
+</tt></td></tr>
+</table></blockquote>
+<b><tt>Valeur de retour</tt></b>
+<blockquote>
+<tt>La bitmap passée en paramètre.
+</tt></blockquote>
+<b><tt>Remarque</tt></b>
+<blockquote>
+<tt>La valeur 0 du paramètre alpha correspond à une source totalement transparente,
+alors que la valeur 255 correspond à une source totalement opaque.</tt></blockquote>
+
+</body>
+</html>

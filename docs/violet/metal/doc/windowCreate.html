@@ -1,0 +1,84 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<body text="#ffc000" link="#ffc000" vlink="#ffc000" alink="#ffc000" bgcolor="#000000">
+ <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <title>windowCreate</title>
+ </head>
+<table border="0" cellspacing="0" cellpadding="2" width="100%"><tr bgcolor="#ffc000">
+ <td width="33%"><a href="windowCbUnclick.html" style="color:black;text-decoration:none"><img src="left.gif" border="0" hspace="5" align="top"><tt>Previous</a></td>
+ <td width="34%" align="center"><a href="Librairie_Window.html" style="color:black;text-decoration:none"><img src="up.gif" border="0" hspace="5" align="top"><tt>Up</a></td>
+ <td width="33%" align="right"><a href="windowCreateChild.html" style="color:black;text-decoration:none"><tt>Next<img src="right.gif" border="0" hspace="5" align="top"></a></td>
+</tr></table><br>
+<blockquote>
+
+<table border="0" width="60%"><tr bgcolor="#ffc000"><td>
+ <table border="0" cellpadding="2" width="100%">
+<tr style="color:black" bgcolor="#ffc000"> <td width=25%><b><tt>windowCreate</b></td> <td width=25% align=center><tt>= fun [</td> <td width=25%></td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td></td> <td><b><tt>I</td> <td><i><tt>_x_</td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td></td> <td><b><tt>I</td> <td><i><tt>_y_</td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td></td> <td><b><tt>I</td> <td><i><tt>_width_</td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td></td> <td><b><tt>I</td> <td><i><tt>_height_</td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td></td> <td><b><tt>I</td> <td><i><tt>_type_</td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td></td> <td><b><tt>S</td> <td><i><tt>_title_</td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td align=center><tt>]</td><td><b><tt>Window</td><td></td>  </tr>
+ </table>
+</td></tr></table>
+
+<br>
+<tt>Crée une nouvelle fenêtre mère.
+</tt>
+<br><br>
+</blockquote>
+<b><tt>Paramètres</tt></b>
+<blockquote><table border="0">
+<tr><td><i><tt>_x_</i></td><td></td></tr>
+<tr><td></td><td><tt>Coordonnée 'x' de la fenêtre fille par rapport à l'écran. Il s'agit de la coordonnée de la garniture éventuelle de la fenêtre.
+</tt></td></tr>
+<tr><td><i><tt>_y_</i></td><td></td></tr>
+<tr><td></td><td><tt>Coordonnée 'y' de la fenêtre fille par rapport à l'écran. Il s'agit de la coordonnée de la garniture éventuelle de la fenêtre.
+</tt></td></tr>
+<tr><td><i><tt>_width_</i></td><td></td></tr>
+<tr><td></td><td><tt>Largeur de la fenêtre fille. Il s'agit de la largeur de la partie cliente de la fenêtre.
+</tt></td></tr>
+<tr><td><i><tt>_height_</i></td><td></td></tr>
+<tr><td></td><td><tt>Hauteur de la fenêtre fille. Il s'agit de la hauteur de la partie cliente de la fenêtre.
+</tt></td></tr>
+<tr><td><i><tt>_type_</i></td><td></td></tr>
+<tr><td></td><td><tt>Type de la fenêtre, à choisir entre :</tt><br>
+<tt>
+</tt><blockquote><table lmargin=20 border="1" cellspacing="0" cellpadding="2" style="border-collapse:collapse" bordercolor="#0">
+<tt>
+</tt><tr style="color:black" bgcolor="#ffc000"><td><a href="WINDOW_NORMAL.html" style="color:black;background-color:#ffc000;text-decoration:none"><tt>WINDOW_NORMAL</a></td>
+<td><tt>Fenêtre normale, de taille fixe, avec barre de titre</tt></td>
+</tr>
+<tt>
+</tt><tr style="color:black" bgcolor="#ffc000"><td><a href="WINDOW_RESIZE.html" style="color:black;background-color:#ffc000;text-decoration:none"><tt>WINDOW_RESIZE</a></td>
+<td><tt>Fenêtre de taille variable, avec barre de titre</tt></td>
+</tr>
+<tt>
+</tt><tr style="color:black" bgcolor="#ffc000"><td><a href="WINDOW_NOMENU_RESIZE.html" style="color:black;background-color:#ffc000;text-decoration:none"><tt>WINDOW_NOMENU_RESIZE</a></td>
+<td><tt>Fenêtre de taille variable, sans barre de titre</tt></td>
+</tr>
+<tt>
+</tt><tr style="color:black" bgcolor="#ffc000"><td><a href="WINDOW_NOMENU.html" style="color:black;background-color:#ffc000;text-decoration:none"><tt>WINDOW_NOMENU</a></td>
+<td><tt>Fenêtre de taille fixe, sans barre de titre</tt></td>
+</tr>
+<tt>
+</tt></table></blockquote>
+<tt>
+</tt></td></tr>
+<tr><td><i><tt>_title_</i></td><td></td></tr>
+<tr><td></td><td><tt>Titre de la fenêtre fille.
+</tt></td></tr>
+</table></blockquote>
+<b><tt>Valeur de retour</tt></b>
+<blockquote>
+<tt>La fenêtre nouvellement créée.
+</tt></blockquote>
+<b><tt>Voir aussi...</tt></b>
+<blockquote>
+<a href="windowCreateChild.html" style="color:black;background-color:#ffc000;text-decoration:none"><tt>windowCreateChild</a>&nbsp&nbsp <a href="windowCreatePopup.html" style="color:black;background-color:#ffc000;text-decoration:none"><tt>windowCreatePopup</a>&nbsp&nbsp <a href="windowDestroy.html" style="color:black;background-color:#ffc000;text-decoration:none"><tt>windowDestroy</a>&nbsp&nbsp </blockquote>
+
+</body>
+</html>

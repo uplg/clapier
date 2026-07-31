@@ -1,44 +1,25 @@
-# Nabaztag MTL VM: ABI reference and rewrite campaign notes
+# Nabaztag MTL VM: the ABI reference
 
-Reference for writing our own embedded application (`bc.jsp`) for the
-Nabaztag:tag running the nabgcc firmware (uplg/nabgcc, `wpa23` fixes).
-Compiled 2026-07-30 from the ServerlessNabaztag (SN) sources, which serve
-as the map of the VM's ABI. The VM itself lives in the C firmware
-(`src/vm/vinterp.c` and friends) and is frozen: this ABI will not move.
+Reference for writing an embedded application (`bc.jsp`) for the
+Nabaztag:tag running the nabgcc firmware (uplg/nabgcc, `wpa23-gtk`).
+The VM lives in the C firmware (`src/vm/vinterp.c` and friends) and is
+frozen: this ABI will not move. The original Violet documentation this
+distills from is preserved on [the Violet shelf](violet/README.md).
 
-## Why this campaign is safe
+## Why hacking on bc.jsp is safe
 
 `bc.jsp` is downloaded by the flash boot bytecode at every boot, never
 flashed. A broken application means a reboot loop or a wedged VM; recovery
 is fixing the file served by clapier and power-cycling the rabbit. The
 config mode (head button held at boot) lives in flash and stays untouched.
 
-## Toolchain (validated)
+## Toolchain
 
-Docker image `mtl-dev` (debian bookworm-slim amd64 + gcc-multilib,
-g++-multilib, make, perl, python3, xxd, curl). All commands run from
-`vendor/ServerlessNabaztag` with:
-
-```
-rtk proxy docker run --rm --platform linux/amd64 \
-  -v /Users/leonard/Github/cat-monitor:/work \
-  -w /work/vendor/ServerlessNabaztag mtl-dev bash -c '<cmd>'
-```
-
-- Build compiler + simulator (once): `make compiler`
-- Preprocess: `bash scripts/make_nominal.sh [-D SIMU]` -> `nominal.mtl`
-  (concatenates `firmware/main.mtl` includes via `scripts/preproc.pl`)
-- Compile: `./compiler/mtl_comp/mtl_comp -s nominal.mtl <out.bin>`
-- Simulate: `./compiler/mtl_simu/mtl_simu --mac 0123456789ab \
-  --logs init,vm,http_server --source nominal.mtl \
-  --http_server_path vl --http_server_port 8081`
-  (renders LEDs as ANSI truecolor in the terminal, ears as numbers;
-  simulated net/audio/motors; serves HTTP from the given path)
-
-Validation: SN sources recompile to 95 904 bytes / 749 functions
-(served bc.jsp is 95 898; delta is a `$Rev$`-style source drift, not a
-toolchain defect). Our build boots in the simulator (green breathing LED,
-ears 13/13).
+The Metal compiler and simulator are vendored in `vendor/metal/` and
+run inside the `mtl-dev` Docker image, built on demand.
+`garenne/build.sh` drives everything: `test` runs the golden suite in
+the simulator, `sim` runs the application interactively (LEDs as ANSI
+truecolor, ears as numbers), no argument produces the device build.
 
 ## The Metal language (VLISP / Sylvain Huet, 2005-2006)
 
@@ -98,11 +79,11 @@ netSetmode mode ssid chn                     station / master (AP) mode
 netSeqAdd seq n           -> 4-byte string   32-bit big-endian add, for TCP seq math
 ```
 
-Consequences for garenne:
+Consequences, embodied by garenne:
 
-1. **We write the whole IP stack in MTL**: Ethernet-ish framing over the
-   rt2501, ARP, IPv4, ICMP, UDP, DHCP, DNS, TCP. This is not optional and
-   it is the bulk of the remaining work.
+1. **The whole IP stack lives in MTL**: Ethernet-ish framing over the
+   rt2501, ARP, IPv4, ICMP, UDP, DHCP, DNS, TCP. Garenne implements all
+   of it; nothing below the radio natives comes from the firmware.
 2. **The simulator cannot test it.** `mtl_simu` (linux_simunet.c) offers
    BSD-socket natives `tcpOpen/tcpListen/tcpSend/udpSend` and calls back on
    `SYS_CBTCP`; it does **not** emulate raw frames. So a simulator build
@@ -112,32 +93,6 @@ Consequences for garenne:
    SIMU`. That seam is the only place the two builds may differ.
 3. `netChk` and `netSeqAdd` exist precisely because checksums and 32-bit
    sequence arithmetic are painful in the VM. Use them.
-
-## SN firmware module map (reference only, no code is imported)
-
-```
-firmware/
-  main.mtl          entry point + feature flags
-  hw/               leds, ears, button, rfid          (thin, sane: KEEP as base)
-  ipv4/             arp, icmp, tcp, udp, trame        (TCP/IP in MTL: KEEP)
-  net/              wifi, dhcp, dns, http, ntp, sock  (KEEP, audit)
-  utils/            json, task, md5, b64, url, time…  (KEEP, prune)
-  audio/            audiolib, midi, record, reclib    (KEEP, audit)
-  chor/             choreographic, palette, streaming (KEEP, audit)
-  srv/              http_server, telnet_server        (REWRITE: our API)
-  run/              run.mtl, ping.mtl, xmpp.mtl 118K  (REWRITE: our app; drop XMPP/PING)
-  forth/            forth interpreter + words         (DECIDE: nice feature, big)
-  protos/           declarations per module
-```
-
-Feature flags in main.mtl: `SERVERLESS` vs `PING` vs `XMPP` (Violet legacy),
-`WEBSERVER`, `TELNETSERVER`, many `*_DEBUG`.
-
-Broken-by-design in SN (do not port): `say` via a long-dead Google
-Translate TTS endpoint; hooks POSTing to `/hooks/*.php` nobody serves;
-weather JSON parsed inside the VM (fragile), UI (vl/index.html) fetched
-from the platform (we replace it with our own page, no bytecode change
-needed).
 
 ## Metal, learned the hard way
 
@@ -157,18 +112,8 @@ needed).
 - Statements end with `;;`. `let value -> name in body` binds.
 - Strings are byte buffers (`strnew`, `strget`, `strset`, `strsub`,
   `strcat`, `strcatlist`): the natural packet buffer type.
-
-## Campaign plan
-
-1. DONE toolchain + validation (2026-07-30)
-2. DONE ABI inventory (this document)
-3. DONE garenne v0.1: our scheduler + our LED driver, 780 bytes, breathes
-   violet in the simulator
-4. v0.2 network, entirely ours: config sector via `envget`, association via
-   `netScan`/`netAuth`, then Ethernet/ARP/IPv4/ICMP/UDP/DHCP, then TCP, then
-   an HTTP server. Simulator seam as described above.
-5. Real-rabbit test served by clapier (rollback: restore the old bc.jsp)
-6. Organs one by one: ears (`motorset`/`motorget`), audio, button, RFID
-7. Our web UI as `vl/index.html` (same-origin JS onto the rabbit's API)
-8. Services rethought: speech synthesized server-side into MP3s the rabbit
-   plays, weather pre-digested by clapier, chimes and surprises curated
+- A page built as a `::` list of string pieces must end with `::nil`,
+  or the type checker unifies the last string as the list's tail and
+  refuses the lot with a message that points everywhere but there.
+- `ifdef X` is satisfied by a `var X;;` anywhere in the source, and
+  ifdefs nest fine, including inside `ifdef BOOT`.

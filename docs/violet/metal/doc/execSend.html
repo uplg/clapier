@@ -1,0 +1,54 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<body text="#ffc000" link="#ffc000" vlink="#ffc000" alink="#ffc000" bgcolor="#000000">
+ <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <title>execSend</title>
+ </head>
+<table border="0" cellspacing="0" cellpadding="2" width="100%"><tr bgcolor="#ffc000">
+ <td width="33%"><a href="execRead.html" style="color:black;text-decoration:none"><img src="left.gif" border="0" hspace="5" align="top"><tt>Previous</a></td>
+ <td width="34%" align="center"><a href="Librairie_Exec.html" style="color:black;text-decoration:none"><img src="up.gif" border="0" hspace="5" align="top"><tt>Up</a></td>
+ <td width="33%" align="right"><a href="execStart.html" style="color:black;text-decoration:none"><tt>Next<img src="right.gif" border="0" hspace="5" align="top"></a></td>
+</tr></table><br>
+<blockquote>
+
+<table border="0" width="60%"><tr bgcolor="#ffc000"><td>
+ <table border="0" cellpadding="2" width="100%">
+<tr style="color:black" bgcolor="#ffc000"> <td width=25%><b><tt>execSend</b></td> <td width=25% align=center><tt>= fun [</td> <td width=25%></td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td></td> <td><b><tt>Exec</td> <td><i><tt>_exec_</td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td></td> <td><b><tt>S</td> <td><i><tt>_str_</td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td></td> <td><b><tt>I</td> <td><i><tt>_index_</td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td align=center><tt>]</td><td><b><tt>I</td><td></td>  </tr>
+ </table>
+</td></tr></table>
+
+<br>
+<tt>Envoie des données sur l'entrée standard de l'exécutable. On envoie les données de la chaîne _str_ à partir de l'index _index_. La fonction n'envoit par forcément toute la chaîne après _index_ : elle retourne l'index du prochain octet à envoyer (qui est égal à la taille de _str_ si la fonction a réussi à tout transmettre).
+</tt>
+<br><br>
+</blockquote>
+<b><tt>Paramètres</tt></b>
+<blockquote><table border="0">
+<tr><td><i><tt>_exec_</i></td><td></td></tr>
+<tr><td></td><td><tt>Un exécutable quelconque.
+</tt></td></tr>
+<tr><td><i><tt>_str_</i></td><td></td></tr>
+<tr><td></td><td><tt>Une chaîne de caractères.
+</tt></td></tr>
+<tr><td><i><tt>_index_</i></td><td></td></tr>
+<tr><td></td><td><tt>Un entier, inférieur à la taille de la chaîne _str_
+</tt></td></tr>
+</table></blockquote>
+<b><tt>Valeur de retour</tt></b>
+<blockquote>
+<tt>Un entier, inférieur à la taille de la chaîne _str_
+</tt></blockquote>
+<b><tt>Remarque</tt></b>
+<blockquote>
+<tt>Cette fonction est bloquante : elle ne retoure que si elle a réussi à envoyer au moins un octet, ou s'il y a une erreur (l'exécutable a fermé son entrée standard, ce qui signifie généralement qu'il a terminé)</tt></blockquote>
+<b><tt>Voir aussi...</tt></b>
+<blockquote>
+<a href="execRead.html" style="color:black;background-color:#ffc000;text-decoration:none"><tt>execRead</a>&nbsp&nbsp <a href="execStart.html" style="color:black;background-color:#ffc000;text-decoration:none"><tt>execStart</a>&nbsp&nbsp </blockquote>
+
+</body>
+</html>

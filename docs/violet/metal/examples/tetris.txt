@@ -1,0 +1,316 @@
+// Tetris - Feb 2003 - by Sylvain HUET
+
+var win;;
+var bmp;;
+var bmpsquare;;
+var bmpmsg;;
+
+var t;;
+var sizeX=16;;
+var sizeY=32;;
+var square=12;;
+var sizeDown=30;;
+var outH=2;;
+var iH=0;;
+var iB=0;;
+var colbord=0xd0d0d0;;
+var score=0;;
+
+var Xc;;
+var Yc;;
+var Nc;;
+var Kc;;
+
+type Game= iniG| startG | downG | runningG | clignoG _|endG|pauseG;;
+var state;;
+var tim;;
+
+var pieces0=
+[0xff ([0 (-1)]::[0 0]::[0 1]::[0 2]::nil)::
+ ([(-1) 0]::[0 0]::[1 0]::[2 0]::nil)::
+ ([0 (-1)]::[0 0]::[0 1]::[0 2]::nil)::
+ ([(-1) 0]::[0 0]::[1 0]::[2 0]::nil)::nil]::
+[0xb0ff ([0 0]::[1 0]::[0 1]::[1 1]::nil)::
+ ([0 0]::[1 0]::[0 1]::[1 1]::nil)::
+ ([0 0]::[1 0]::[0 1]::[1 1]::nil)::
+ ([0 0]::[1 0]::[0 1]::[1 1]::nil)::nil]::
+[0xffff ([0 0]::[(-1) 0]::[0 1]::[1 0]::nil)::
+ ([0 0]::[0 (-1)]::[0 1]::[1 0]::nil)::
+ ([0 0]::[(-1) 0]::[0 (-1)]::[1 0]::nil)::
+ ([0 0]::[0 (-1)]::[0 1]::[(-1) 0]::nil)::nil]::
+[0xff00 ([0 0]::[(-1) 0]::[0 1]::[1 1]::nil)::
+ ([0 0]::[0 1]::[1 0]::[1 (-1)]::nil)::
+ ([0 0]::[(-1) 0]::[0 1]::[1 1]::nil)::
+ ([0 0]::[0 1]::[1 0]::[1 (-1)]::nil)::nil]::
+[0xff00 ([0 0]::[1 0]::[0 1]::[(-1) 1]::nil)::
+ ([0 0]::[1 0]::[1 1]::[0 (-1)]::nil)::
+ ([0 0]::[1 0]::[0 1]::[(-1) 1]::nil)::
+ ([0 0]::[1 0]::[1 1]::[0 (-1)]::nil)::nil]::
+[0xffff00 ([0 0]::[0 (-1)]::[0 1]::[1 1]::nil)::
+ ([0 0]::[(-1) 0]::[1 0]::[1 (-1)]::nil)::
+ ([0 0]::[0 (-1)]::[0 1]::[(-1) (-1)]::nil)::
+ ([0 0]::[(-1) 0]::[1 0]::[(-1) 1]::nil)::nil]::
+[0xff00ff ([0 0]::[0 (-1)]::[0 1]::[(-1) 1]::nil)::
+ ([0 0]::[(-1) 0]::[1 0]::[1 1]::nil)::
+ ([0 0]::[0 (-1)]::[0 1]::[1 (-1)]::nil)::
+ ([0 0]::[(-1) 0]::[1 0]::[(-1) (-1)]::nil)::nil]::
+nil;;
+
+
+var spaces="     ";;
+
+fun setScore i=
+ set score=i;
+ bitmapText bmp (square*sizeX)/2 square*(sizeY+1-outH) ALIGN_CENTER strcat "score : " (strright (strcat spaces itoa score) 8) nil 0xffffff 0;
+ 0;;
+
+fun gameOver=0;;
+
+fun _destroyE x=exit;;
+
+fun _paintE a=
+ if
+ match state with
+  (endG ->bitmapErase bmpmsg 0;
+  bitmapText bmpmsg (square*sizeX)/2 0 ALIGN_CENTER "Game Over" nil 0xffffff 0;
+  bitmapText bmpmsg (square*sizeX)/2 fontH nil ALIGN_CENTER "press 'space'" nil 0xffffff 0)
+ |(pauseG ->bitmapErase bmpmsg 0;
+  bitmapText bmpmsg (square*sizeX)/2 0 ALIGN_CENTER "Pause" nil 0xffffff 0;
+  bitmapText bmpmsg (square*sizeX)/2 fontH nil ALIGN_CENTER "press 'P'" nil 0xffffff 0)
+ |(_-> nil)
+ !=nil then bitmapToBitmap bmp 0 200 bmpmsg 0 0 nil nil 0;
+ bitmapToWindow win 0 0 bmp 0 0 nil nil;
+ 0;;
+
+
+fun drawSquare x y col=
+ bitmapErase bmpsquare col;
+ bitmapToBitmap bmp x+1 y+1 bmpsquare 0 0 nil nil nil;;
+
+fun drawH x y i j=
+ if i>=j then 0
+ else
+ (drawSquare x y t.i;
+  drawH x+square y i+1 j);;
+
+fun drawV y i j=
+ if i>=j then 0
+ else
+ (drawH 0 y i i+sizeX;
+  drawV y+square i+sizeX j);;
+
+fun drawAll=
+ bitmapErase bmp 0;
+ drawV 0 iH iB;
+ _paintE nil;;
+
+fun drawLine y c=
+ let sizeX-1->i in while i>=0 do
+ (drawSquare i*square (y-outH)*square c;
+  set i=i-1);;
+
+fun drawMask1 x y c l=
+ if l==nil then 0
+ else let l->([a _]::n) in
+ (drawSquare (x+a)*square y c;
+  drawMask1 x y c n);;
+
+fun drawMask x n k=
+ let listnth pieces0 n ->[c l] in
+ let listnth l k->ll in
+ drawMask1 x (sizeY-outH)*square c ll;;
+  
+fun drawPiece1 x y c l=
+ if l==nil then 0
+ else let l->([a b]::n) in
+ let x+a+(y+b)*sizeX-> i in
+ if t.i then 1
+ else if drawPiece1 x y c n then 1
+ else
+ (set t.i=c;
+  if i>=iH then drawSquare (x+a)*square (y+b-outH)*square c
+  else nil;
+  0);;
+
+fun drawPiece x y n k=
+ let listnth pieces0 n ->[c l] in
+ let listnth l k->ll in
+ drawPiece1 x y c ll;;
+
+fun erasePiece1 x y l=
+ if l==nil then 0
+ else let l->([a b]::n) in
+ let x+a+(y+b)*sizeX-> i in
+ (set t.i=0;
+  if i>=iH then drawSquare (x+a)*square (y+b-outH)*square 0
+  else nil;
+  erasePiece1 x y n);;
+
+fun erasePiece x y n k=
+ let listnth pieces0 n ->[c l] in
+ let listnth l k->ll in
+ erasePiece1 x y ll;;
+
+fun iniTab=
+ set t=newtab sizeX*sizeY 0;
+ let 0->i in while i<iB do
+ (set t.i=set t.(i+sizeX-1)=colbord;
+  set i=i+sizeX);
+ let iB-sizeX->i in while i<iB do
+ (set t.i=colbord;
+  set i=i+1);;
+
+fun choosepiece=
+ set Xc=sizeX/2;
+ set Yc=1;
+ set Nc=((rand&255)*listlen pieces0)/256;
+ set Kc=((rand&255)*4)/256;
+ drawPiece Xc Yc Nc Kc;;
+
+fun testLine y i=
+ if i<0 then 1
+ else if t.(y+i) then testLine y i-1
+ else 0;;
+
+fun scroll y=
+ let y*sizeX-1 -> i in
+ while i>=0 do
+ (set t.(i+sizeX)=t.i;
+  set i=i-1);;
+
+fun testFull ymin y=
+ if y<ymin then nil
+ else if testLine y*sizeX sizeX-1 then y
+ else testFull ymin y-1;;
+
+fun downpiece=
+ let Yc+1->y in
+ (erasePiece Xc Yc Nc Kc;
+  if drawPiece Xc y Nc Kc
+  then drawPiece Xc Yc Nc Kc
+  else
+  (set Yc=y;
+   downpiece)
+ );;
+
+fun _clockE a=
+ set state=match state with
+  (iniG ->
+    iniTab;
+    drawAll;
+    setScore 0;
+    startG)
+ |(startG ->
+    if choosepiece then
+    (timerStop tim;set tim=nil;gameOver;endG)
+    else runningG)
+ |(runningG->
+   let Yc+1->y in
+   (erasePiece Xc Yc Nc Kc;
+    if drawPiece Xc y Nc Kc
+    then
+    (drawPiece Xc Yc Nc Kc;
+     let testFull Yc-1 sizeY-2 -> f in
+     if f==nil then startG
+     else clignoG [f 10])
+    else
+    (set Yc=y; state)
+   ))
+ |(downG->
+    downpiece;
+    runningG)
+ |(clignoG [y n]->
+   if n then
+   (drawLine y if n&1 then 0xffffff else 0;
+    clignoG [y n-1])
+   else
+   (scroll y;
+    drawAll;
+    setScore score+1;
+    let testFull Yc-1 sizeY-2 -> f in
+     if f==nil then startG
+     else clignoG [f 10]))
+ |(_->nil);
+ drawLine sizeY 0;
+ drawMask Xc Nc Kc;
+ _paintE nil
+;;
+
+fun _keyE win c=
+match state with
+(runningG ->
+ if c==XK_Down then
+  let (Kc+1)&3->k in
+  (erasePiece Xc Yc Nc Kc;
+   if drawPiece Xc Yc Nc k
+   then drawPiece Xc Yc Nc Kc
+   else set Kc=k;
+   _paintE nil;0)
+ else if c==XK_Up then
+  let (Kc-1)&3->k in
+  (erasePiece Xc Yc Nc Kc;
+   if drawPiece Xc Yc Nc k
+   then drawPiece Xc Yc Nc Kc
+   else set Kc=k;
+   _paintE nil;0)
+ else if c==XK_Left then
+  let Xc-1->x in
+  (erasePiece Xc Yc Nc Kc;
+   if drawPiece x Yc Nc Kc
+   then drawPiece Xc Yc Nc Kc
+   else set Xc=x;
+   _paintE nil;0)
+ else if c==XK_Right then
+  let Xc+1->x in
+  (erasePiece Xc Yc Nc Kc;
+   if drawPiece x Yc Nc Kc
+   then drawPiece Xc Yc Nc Kc
+   else set Xc=x;
+   _paintE nil;0)
+ else if c==32 then
+  (set state=downG;0)
+ else if c=='p' || c=='P' then
+  (timerStop tim;set tim=nil;set state=pauseG;_paintE nil;0)
+ else if c==27 then
+  (timerStop tim;set tim=nil;set state=endG;gameOver;_paintE nil;0)
+ else nil)
+|(endG ->
+ if c==32 then
+ (set state=iniG;
+  set tim=timerStart 100 #_clockE;
+  0)
+ else nil)
+|(pauseG ->
+ if c=='p' || c=='P' then
+ (set state=runningG;
+  set tim=timerStart 100 #_clockE;
+  0)
+ else nil)
+|(_->0);;
+
+fun _clicE w x y b=
+	Secho "clic ";Iecholn b;
+	0;;
+	
+fun iniWin x y=
+ set iH=outH*sizeX;
+ set iB=sizeX*sizeY;
+ set win=windowCreate x y square*sizeX square*(sizeY-outH)+sizeDown WINDOW_NORMAL "Tetris";
+ set bmp=bitmapCreate square*sizeX square*(sizeY-outH)+sizeDown;
+ set bmpsquare=bitmapCreate square-2 square-2;
+ set bmpmsg=bitmapCreate square*sizeX 2*fontH nil;
+ bitmapErase bmpmsg 0;
+ windowCbPaint win #_paintE;
+ windowCbDestroy win #_destroyE;
+ windowCbKeydown win #_keyE;
+ windowCbClick win #_clicE;
+ set state=endG;
+ iniTab;
+ drawAll;   
+ _paintE nil;
+0;;
+
+fun main=
+ srand time;
+ iniWin nil nil;
+ 0;;

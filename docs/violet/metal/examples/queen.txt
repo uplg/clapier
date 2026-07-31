@@ -1,0 +1,36 @@
+// Test Queens - Jan 03 - by Sylvain Huet
+// Metal
+
+var size = 16;;
+
+fun check i l j=
+ if l==nil then 1
+ else let l->(a::nxt) in
+  if i==a || (abs i-a)==j then 0
+  else check i nxt j+1;;
+ 
+fun queens2 i j n l=
+ if i>=n then nil
+ else if j>=n then l
+ else if check i l 1
+  then let queens2 0 j+1 n i::l -> res in
+   if res==nil then queens2 i+1 j n l
+   else res
+  else queens2 i+1 j n l;;
+
+fun queens n=
+ queens2 0 0 n nil;;
+
+fun main=
+ Secho "Problèmes des dames / taille ";Iecholn size;
+ setlogmask LOG_USER;
+ let time_ms -> t in
+ let queens size -> res in
+ let time_ms-t ->d in
+ (listIecholn res;
+  Secho "temps execution : ";Iecho d;Secho " ms\n");
+ 0;;
+
+
+// 14 : 230
+// 16 : 1532 (2173 ScolV4) (4646 ScolV3.5)

@@ -1,0 +1,62 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<body text="#ffc000" link="#ffc000" vlink="#ffc000" alink="#ffc000" bgcolor="#000000">
+ <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <title>newtab</title>
+ </head>
+<table border="0" cellspacing="0" cellpadding="2" width="100%"><tr bgcolor="#ffc000">
+ <td width="33%"><a href="listtotabR.html" style="color:black;text-decoration:none"><img src="left.gif" border="0" hspace="5" align="top"><tt>Previous</a></td>
+ <td width="34%" align="center"><a href="Librairie_Table.html" style="color:black;text-decoration:none"><img src="up.gif" border="0" hspace="5" align="top"><tt>Up</a></td>
+ <td width="33%" align="right"><a href="strtotab.html" style="color:black;text-decoration:none"><tt>Next<img src="right.gif" border="0" hspace="5" align="top"></a></td>
+</tr></table><br>
+<blockquote>
+
+<table border="0" width="60%"><tr bgcolor="#ffc000"><td>
+ <table border="0" cellpadding="2" width="100%">
+<tr style="color:black" bgcolor="#ffc000"> <td width=25%><b><tt>newtab</b></td> <td width=25% align=center><tt>= fun [</td> <td width=25%></td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td></td> <td><b><tt>I</td> <td><i><tt>_length_</td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td></td> <td><b><tt>u0</td> <td><i><tt>_val_</td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td align=center><tt>]</td><td><b><tt>tab u0</td><td></td>  </tr>
+ </table>
+</td></tr></table>
+
+<br>
+<tt>Création d'une table en fonction de sa taille de d'une valeur d'initialisation.
+</tt>
+<br><br>
+</blockquote>
+<b><tt>Paramètres</tt></b>
+<blockquote><table border="0">
+<tr><td><i><tt>_length_</i></td><td></td></tr>
+<tr><td></td><td><tt>Un entier positif.
+</tt></td></tr>
+<tr><td><i><tt>_val_</i></td><td></td></tr>
+<tr><td></td><td><tt>Une valeur quelconque.
+</tt></td></tr>
+</table></blockquote>
+<b><tt>Valeur de retour</tt></b>
+<blockquote>
+<tt>Retourne une table dont la taille est passée en paramètre, et dont chaque case est initialisée avec la valeur passée en paramètre.
+</tt></blockquote>
+<b><tt>Remarque</tt></b>
+<blockquote>
+<tt>La valeur d'initialisation doit être utilisée avec prudence, celle-ci est en effet passée par référence et non par valeur.
+Ainsi (newtab 3 newtab 3 0) ne retourne pas une véritable matrice nulle 3x3, car chaque "ligne" pointe vers le même vecteur-3.</tt><br>
+<tt>
+Pour qu'un tel exemple fonctionne on écrira plutôt :</tt><br>
+<tt>
+</tt><br>
+<table border="0" cellpadding="2"><tr style="color:black" bgcolor=ffc000>
+<td><pre><tt>
+let newtab 3 nil -> m in
+(	for i=0;i&lt 3 do set m.i=newtab 3 0;
+	m
+)
+</tt></pre></td>
+</tr></table>
+<tt>
+</tt></blockquote>
+
+</body>
+</html>

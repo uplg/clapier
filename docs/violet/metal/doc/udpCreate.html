@@ -1,0 +1,61 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<body text="#ffc000" link="#ffc000" vlink="#ffc000" alink="#ffc000" bgcolor="#000000">
+ <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <title>udpCreate</title>
+ </head>
+<table border="0" cellspacing="0" cellpadding="2" width="100%"><tr bgcolor="#ffc000">
+ <td width="33%"><a href="tcpserverDestroy.html" style="color:black;text-decoration:none"><img src="left.gif" border="0" hspace="5" align="top"><tt>Previous</a></td>
+ <td width="34%" align="center"><a href="Librairie_Tcp-Udp.html" style="color:black;text-decoration:none"><img src="up.gif" border="0" hspace="5" align="top"><tt>Up</a></td>
+ <td width="33%" align="right"><a href="udpDestroy.html" style="color:black;text-decoration:none"><tt>Next<img src="right.gif" border="0" hspace="5" align="top"></a></td>
+</tr></table><br>
+<blockquote>
+
+<table border="0" width="60%"><tr bgcolor="#ffc000"><td>
+ <table border="0" cellpadding="2" width="100%">
+<tr style="color:black" bgcolor="#ffc000"> <td width=25%><b><tt>udpCreate</b></td> <td width=25% align=center><tt>= fun [</td> <td width=25%></td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td></td> <td><b><tt>S</td> <td><i><tt>_addr_</td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td></td> <td><b><tt>fun [Udp S S] I</td> <td><i><tt>_callback_</td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td align=center><tt>]</td><td><b><tt>Udp</td><td></td>  </tr>
+ </table>
+</td></tr></table>
+
+<br>
+<tt>Crée une socket Udp éventuellement associée à une adresse et un port local (bind).
+</tt>
+<br><br>
+</blockquote>
+<b><tt>Paramètres</tt></b>
+<blockquote><table border="0">
+<tr><td><i><tt>_addr_</i></td><td></td></tr>
+<tr><td></td><td><tt>Adresse locale à attribuer à la socket Udp à créer. Cette adresse peut avoir trois formes :</tt><br>
+<tt>
+</tt><ul>
+<tt>
+</tt><li><tt>"numéro de port" (par exemple "80") : la socket est associée à ce port, pour toutes les adresses IP locales (correspond à la constante INADDR_ANY)</tt>
+<tt>
+</tt><li><tt>"IP:port" : la socket est associée à cette adresse (on suppose que l'adresse IP est une adresse IP locale).</tt>
+<tt>
+</tt><li><tt>nil : la socket Udp va être créée localement sur un port quelconque ; on ne s'en servira que pour l'envoi.</tt>
+<tt>
+</tt></ul>
+<tt>
+</tt></td></tr>
+<tr><td><i><tt>_callback_</i></td><td></td></tr>
+<tr><td></td><td><tt>Une callback.
+</tt></td></tr>
+</table></blockquote>
+<b><tt>Valeur de retour</tt></b>
+<blockquote>
+<tt>La socket Udp nouvellement créée.
+</tt></blockquote>
+<b><tt>Remarque</tt></b>
+<blockquote>
+<tt>La callback est appelée lorsque la socket Udp reçoit un message. Alors le premier argument S est le contenu de ce message, et le second argument S est l'adresse de l'émetteur du message sous la forme "ip:port"</tt></blockquote>
+<b><tt>Voir aussi...</tt></b>
+<blockquote>
+<a href="udpSendTo.html" style="color:black;background-color:#ffc000;text-decoration:none"><tt>udpSendTo</a>&nbsp&nbsp <a href="udpDestroy.html" style="color:black;background-color:#ffc000;text-decoration:none"><tt>udpDestroy</a>&nbsp&nbsp </blockquote>
+
+</body>
+</html>

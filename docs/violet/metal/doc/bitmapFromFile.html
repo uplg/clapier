@@ -1,0 +1,63 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<body text="#ffc000" link="#ffc000" vlink="#ffc000" alink="#ffc000" bgcolor="#000000">
+ <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <title>bitmapFromFile</title>
+ </head>
+<table border="0" cellspacing="0" cellpadding="2" width="100%"><tr bgcolor="#ffc000">
+ <td width="33%"><a href="bitmapFromData.html" style="color:black;text-decoration:none"><img src="left.gif" border="0" hspace="5" align="top"><tt>Previous</a></td>
+ <td width="34%" align="center"><a href="Librairie_Bitmap.html" style="color:black;text-decoration:none"><img src="up.gif" border="0" hspace="5" align="top"><tt>Up</a></td>
+ <td width="33%" align="right"><a href="bitmapFromGif.html" style="color:black;text-decoration:none"><tt>Next<img src="right.gif" border="0" hspace="5" align="top"></a></td>
+</tr></table><br>
+<blockquote>
+
+<table border="0" width="60%"><tr bgcolor="#ffc000"><td>
+ <table border="0" cellpadding="2" width="100%">
+<tr style="color:black" bgcolor="#ffc000"> <td width=25%><b><tt>bitmapFromFile</b></td> <td width=25% align=center><tt>= fun [</td> <td width=25%></td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td></td> <td><b><tt>S</td> <td><i><tt>_file_</td> </tr>
+<tr style="color:black" bgcolor="#ffc000"> <td></td> <td align=center><tt>]</td><td><b><tt>Bitmap</td><td></td>  </tr>
+ </table>
+</td></tr></table>
+
+<br>
+<tt>Lit un fichier graphique et crée une bitmap correspondant à son contenu.
+</tt>
+<br><br>
+</blockquote>
+<b><tt>Paramètres</tt></b>
+<blockquote><table border="0">
+<tr><td><i><tt>_file_</i></td><td></td></tr>
+<tr><td></td><td><tt>Le nom d'un fichier contenant une image dont le format est reconnu. Ce nom est soit complet, soit relatif.
+</tt></td></tr>
+</table></blockquote>
+<b><tt>Valeur de retour</tt></b>
+<blockquote>
+<tt>Nouvelle bitmap contenant l'image. Vaut nil, si erreur (fichier inexistant ou ne correspondant pas à un format reconnu).
+</tt></blockquote>
+<b><tt>Remarque</tt></b>
+<blockquote>
+<tt>Les formats reconnus sont :
+</tt><ul>
+<tt>
+</tt><li><tt>BMP monochrome</tt>
+<tt>
+</tt><li><tt>BMP 8 bits paletté</tt>
+<tt>
+</tt><li><tt>BMP 24 bits</tt>
+<tt>
+</tt><li><tt>GIF (dans le cas d'un gif animé, seule la première image sera prise en compte ; voir </tt><a href="bitmapFromGif.html" style="color:black;background-color:#ffc000;text-decoration:none"><tt>bitmapFromGif</a><tt> pour une gestion complète des gif animés)</tt>
+<tt>
+</tt><li><tt>JPEG</tt>
+<tt>
+</tt><li><tt>PNG</tt>
+<tt>
+</tt></ul>
+<tt>
+</tt></blockquote>
+<b><tt>Voir aussi...</tt></b>
+<blockquote>
+<a href="bitmapFromGif.html" style="color:black;background-color:#ffc000;text-decoration:none"><tt>bitmapFromGif</a>&nbsp&nbsp </blockquote>
+
+</body>
+</html>
