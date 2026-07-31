@@ -1,0 +1,19 @@
+[package]
+name = "clapier-flash"
+description = "Firmware flasher for the Nabaztag:tag bootloader"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "flash-nabaztag"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+clap = { workspace = true, features = ["env"] }
+socket2.workspace = true
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"

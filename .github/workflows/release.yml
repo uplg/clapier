@@ -61,7 +61,7 @@ jobs:
         if: matrix.musl
         run: sudo apt-get update -qq && sudo apt-get install -y -qq musl-tools
       - name: build
-        run: cargo build --release --locked --target ${{ matrix.target }} -p clapier -p clapier-chor
+        run: cargo build --release --locked --target ${{ matrix.target }} -p clapier -p clapier-chor -p clapier-flash
       - name: package
         shell: bash
         run: |
@@ -71,6 +71,7 @@ jobs:
           [ "${{ runner.os }}" = "Windows" ] && ext=".exe"
           cp "target/${{ matrix.target }}/release/clapier$ext" "dist/$name/"
           cp "target/${{ matrix.target }}/release/chor-encode$ext" "dist/$name/"
+          cp "target/${{ matrix.target }}/release/flash-nabaztag$ext" "dist/$name/"
           cp README.md LICENSE "dist/$name/"
           [ "${{ runner.os }}" = "macOS" ] && cp deploy/fr.uplg.clapier.plist "dist/$name/"
           cd dist
@@ -119,7 +120,7 @@ jobs:
       - name: firmware from the latest uplg/nabgcc release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release download --repo uplg/nabgcc --pattern '*' --dir artifacts
+        run: gh release download --repo uplg/nabgcc --pattern '*.sim' --dir artifacts
       - name: checksums
         run: |
           cd artifacts

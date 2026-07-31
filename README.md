@@ -10,15 +10,20 @@ which teaches the 2006 rabbit WPA2/WPA3.
 
 Grab the [latest release](https://github.com/uplg/clapier/releases):
 archives for Linux x86_64 and aarch64 (static, NAS and Raspberry Pi
-friendly), macOS Apple Silicon and Windows, plus the firmware, its
-flasher, the rabbit bytecode and checksums. No toolchain required.
+friendly), macOS Apple Silicon and Windows, each with the server, the
+choreography encoder and the firmware flasher, plus the firmware, the
+rabbit bytecode and checksums. No toolchain, no Python, nothing else.
 
 Still have a rabbit in a cupboard? The whole journey:
 
 1. **Flash the firmware once.** Hold the head button while powering
    on: the rabbit opens a `NabaztagXX` access point. Join it and run
-   `python3 flash-nabaztag.py Nab-wpa23-gtk-*.sim` (both files are in
-   the release). The bootloader is never touched: a bad flash is
+   `./flash-nabaztag Nab-wpa23-gtk-*.sim` (the flasher is in your
+   platform archive, the `.sim` next to it). It paces the upload to
+   the bootloader's rhythm and shows progress; the historical
+   `http://192.168.0.1/u.htm` upload page still works, but it gives
+   no feedback and browsers tend to outrun the rabbit and stall.
+   Either way the bootloader itself is never touched: a bad flash is
    always recoverable from the same menu.
 2. **Run the server.** Unpack the archive for your machine and run
    `./clapier --bind 0.0.0.0:80 --overlay overlay`. Any always-on box
@@ -125,6 +130,7 @@ crates/
   clapier          the binary: CLI, router, request logging
   clapier-vl       the file service in the rabbit's dialect
   clapier-chor     the Violet choreography encoder (chor-encode)
+  clapier-flash    the firmware flasher (flash-nabaztag)
   clapier-fleet    the fleet register, learned from the wire
   clapier-journal  the request journal (bounded ring, thread-safe)
   clapier-pages    the pages for humans (status, pilot, listings)

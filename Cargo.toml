@@ -6,6 +6,7 @@ exclude = ["vendor/pocket-tts"]
 members = [
     "crates/clapier",
     "crates/clapier-chor",
+    "crates/clapier-flash",
     "crates/clapier-fleet",
     "crates/clapier-journal",
     "crates/clapier-pages",
@@ -13,7 +14,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 license = "MIT"
 repository = "https://github.com/uplg/clapier"
