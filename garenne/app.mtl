@@ -13,7 +13,8 @@ fun garenne_pulse task =
     log_send (strcatlist
         "garenne " :: GARENNE_VERSION ::
         " up=" :: (itoa garenne_uptime_s) ::
-        "s link=" :: (itoa netState) :: nil);
+        "s link=" :: (itoa netState) ::
+        " mac=" :: (mac_str net_mac) :: nil);
     TaskRun;;
 
 // The association is inherited from the boot bytecode (bc.jsp arrived

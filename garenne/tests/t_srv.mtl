@@ -111,9 +111,11 @@ fun _t_hsrv_pure =
     t_true "reqline garbage" ((_hsrv_reqline "garbage\13\10\13\10") == nil);
     t_eq "strip query" (_hsrv_strip_query "/status?m=0019db9c2815") "/status";
     t_eq "strip none" (_hsrv_strip_query "/status") "/status";
+    // The version is spliced in, not frozen: bumping GARENNE_VERSION
+    // must not cost a golden edit. Everything else stays byte-exact.
     t_eq "response 404 bytes"
         (hsrv_response 404 "no\13\10")
-        "HTTP/1.0 404 Not Found\13\10Server: garenne/0.11.0\13\10Content-Type: text/plain\13\10Content-Length: 4\13\10Access-Control-Allow-Origin: *\13\10Connection: close\13\10\13\10no\13\10";
+        (strcatlist "HTTP/1.0 404 Not Found\13\10Server: garenne/" :: GARENNE_VERSION :: "\13\10Content-Type: text/plain\13\10Content-Length: 4\13\10Access-Control-Allow-Origin: *\13\10Connection: close\13\10\13\10no\13\10" :: nil);
     _t_contains "route 404" (hsrv_route "GET" "/nope") "404 Not Found";
     _t_contains "route non-get" (hsrv_route "POST" "/status") "400 Bad Request";
     _t_contains "route query stripped" (hsrv_route "GET" "/status?x=1") "HTTP/1.0 200 OK";
@@ -195,7 +197,7 @@ fun _t_http_session =
         (
             _t_contains "http 200" resp "HTTP/1.0 200 OK";
             _t_contains "http cors" resp "Access-Control-Allow-Origin: *";
-            _t_contains "http version" resp "garenne=0.11.0";
+            _t_contains "http version" resp (strcat "garenne=" GARENNE_VERSION);
             _t_contains "http counters" resp "tcp_accepts=";
             _t_contains "http mac" resp "mac=0019db9c2815"
         );

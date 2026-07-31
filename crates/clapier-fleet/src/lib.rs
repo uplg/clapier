@@ -19,6 +19,10 @@ pub struct Pulse {
     pub version: String,
     pub uptime_s: u64,
     pub link: u8,
+    /// The sender's MAC (12 lowercase hex), carried by garenne 0.11.1+
+    /// so the fleet re-identifies rabbits from the pulse alone after a
+    /// server restart. Older pulses simply lack it.
+    pub mac: Option<String>,
 }
 
 /// Parses a log-channel line as a pulse. The channel also carries free
@@ -37,10 +41,17 @@ pub fn parse_pulse(line: &str) -> Option<Pulse> {
         .parse()
         .ok()?;
     let link = words.next()?.strip_prefix("link=")?.parse().ok()?;
+    // Trailing fields are optional and order-free, so the format can
+    // grow without breaking older parsers (this one included).
+    let mac = words
+        .filter_map(|w| w.strip_prefix("mac="))
+        .map(|m| m.replace(':', "").to_ascii_lowercase())
+        .find(|m| m.len() == 12 && m.chars().all(|c| c.is_ascii_hexdigit()));
     Some(Pulse {
         version,
         uptime_s,
         link,
+        mac,
     })
 }
 
@@ -145,11 +156,14 @@ impl Fleet {
         let mut rabbits = self.rabbits.lock().expect("fleet lock");
         match rabbits.iter_mut().find(|r| r.ip == ip) {
             Some(entry) => {
+                if pulse.mac.is_some() {
+                    entry.mac = pulse.mac.clone();
+                }
                 entry.last_pulse = Some(at);
                 entry.pulse = Some(pulse);
             }
             None => rabbits.push(Rabbit {
-                mac: None,
+                mac: pulse.mac.clone(),
                 ip,
                 last_boot: None,
                 last_pulse: Some(at),
@@ -221,6 +235,7 @@ mod tests {
                 version: "0.11.0".into(),
                 uptime_s: 1,
                 link: 4,
+                mac: None,
             },
             Instant::now(),
         );
@@ -239,7 +254,18 @@ mod tests {
                 version: "0.8.2".to_string(),
                 uptime_s: 42,
                 link: 4,
+                mac: None,
             })
+        );
+        // garenne 0.11.1 signs its pulses; the fleet re-identifies a
+        // rabbit from the pulse alone after a server restart.
+        assert_eq!(
+            parse_pulse("garenne 0.11.1 up=42s link=4 mac=00:19:DB:9c:28:15").and_then(|p| p.mac),
+            Some("0019db9c2815".to_string())
+        );
+        assert_eq!(
+            parse_pulse("garenne 0.11.1 up=1s link=4 mac=not-a-mac").and_then(|p| p.mac),
+            None
         );
         for line in [
             "button: click",

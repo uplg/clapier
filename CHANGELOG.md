@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- The fleet self-heals: garenne 0.11.1 signs its two-second pulse with
+  the rabbit's MAC, so a restarted clapier re-identifies every rabbit
+  from the pulse alone, and the pilot never goes blind again. Older
+  pulses still parse; the trailing field is optional.
+
 ### Fixed
 
 - The launchd template passes `--garenne` with an absolute path: agents
