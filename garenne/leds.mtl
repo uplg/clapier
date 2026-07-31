@@ -13,6 +13,9 @@ const RGB_BLACK = 0;;
 
 var leds_breathing = 1;;
 var leds_breath_color = 0x7c5cff;;
+// The nose breathes along with the base: a sign of life visible from
+// the front. The speech glow borrows the nose, so it can opt out.
+var leds_nose_breathing = 1;;
 var _leds_phase = 0;;
 
 // Scale each RGB channel by k/255. Channels never overlap, sums are safe.
@@ -36,7 +39,10 @@ fun _leds_breathe task =
         let if _leds_phase < 256 then _leds_phase else 511 - _leds_phase -> k in
         (
             set _leds_phase = (_leds_phase + 8) & 511;
-            led LED_BASE (_leds_scale leds_breath_color k)
+            led LED_BASE (_leds_scale leds_breath_color k);
+            if leds_nose_breathing then
+                led LED_NOSE (_leds_scale leds_breath_color k)
+            else 0
         );
     TaskRun;;
 

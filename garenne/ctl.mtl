@@ -23,6 +23,15 @@ fun _ctl_fetch_done status body =
         "http " :: (itoa status) :: " " :: (itoa n) :: "B: " ::
         (strsub body 0 (if n > 96 then 96 else n)) :: nil);;
 
+fun _ctl_chor_done status body =
+    if status == 200 then
+    (
+        gc;
+        let chor_play "chor" body -> n in
+        log_send (strcatlist "chor: " :: (itoa n) :: " steps" :: nil)
+    )
+    else log_send (strcat "chor: http " (itoa status));;
+
 fun _ctl_run frame macsrc cmd =
     if !strcmp cmd "ping" then
         _ctl_reply frame macsrc (strcatlist
@@ -85,6 +94,14 @@ fun _ctl_run frame macsrc cmd =
         (audio_stop; _ctl_reply frame macsrc "ok stopped")
     else if !strcmp cmd "dance" then
         (choreo_play "salute" choreo_salute; _ctl_reply frame macsrc "ok dancing")
+    else if ((strlen cmd) > 5) && (!vstrcmp cmd 0 "chor " 0 5) then
+    (
+        // A Violet-era binary choreography, fetched then danced.
+        http_get CLAPIER_IP 80
+            (strcatlist (strsub cmd 5 ((strlen cmd) - 5)) :: "?m=" :: (mac_str net_mac) :: nil)
+            #_ctl_chor_done;
+        _ctl_reply frame macsrc "ok fetching chor"
+    )
     else if ((strlen cmd) > 4) && (!vstrcmp cmd 0 "vol " 0 4) then
     (
         set audio_vol = atoi (strsub cmd 4 ((strlen cmd) - 4));

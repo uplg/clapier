@@ -48,9 +48,19 @@ fun _garenne_ear_moved n =
 // playback edges only, so the look never sticks.
 fun _garenne_audio_state playing =
     if playing then
-        (ears_goto 0 2; ears_goto 1 15; led LED_NOSE 0x803010; 0)
+    (
+        ears_goto 0 2; ears_goto 1 15;
+        set leds_nose_breathing = 0;
+        led LED_NOSE 0x803010;
+        0
+    )
     else
-        (ears_goto 0 0; ears_goto 1 0; led LED_NOSE RGB_BLACK; 0);;
+    (
+        ears_goto 0 0; ears_goto 1 0;
+        led LED_NOSE RGB_BLACK;
+        set leds_nose_breathing = 1;
+        0
+    );;
 
 fun garenne_init =
     set garenne_boot_ms = time_ms;

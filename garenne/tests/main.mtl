@@ -20,6 +20,7 @@ proto main 0;;
 #include /work/garenne/ears.mtl
 #include /work/garenne/button.mtl
 #include /work/garenne/choreo.mtl
+#include /work/garenne/chor.mtl
 #include /work/garenne/http/client.mtl
 #include /work/garenne/audio.mtl
 #include /work/garenne/http/server.mtl
@@ -34,6 +35,7 @@ proto main 0;;
 #include /work/garenne/tests/t_organs.mtl
 #include /work/garenne/tests/t_audio.mtl
 #include /work/garenne/tests/t_choreo.mtl
+#include /work/garenne/tests/t_chor.mtl
 
 fun main =
     t_wire;
@@ -44,4 +46,5 @@ fun main =
     t_organs;
     t_audio;
     t_choreo;
+    t_chor;
     t_summary;;

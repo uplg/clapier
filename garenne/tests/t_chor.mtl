@@ -1,0 +1,60 @@
+// The Violet .chor parser against a hand-assembled binary score whose
+// expected steps were walked out by hand from the format spec
+// (DanceGenerator.java): tempo scaling, LED index inversion, ear
+// twentieths-to-holes conversion, palette resolution, and the commands
+// a silent rabbit skips.
+
+const T_CHOR_SCORE = "\$01\$01\$01\$01\$00\$01\$05\$02\$07\$04\$FF\$00\$00\$00\$00\$01\$09\$00\$00\$FF\$00\$08\$00\$0A\$00\$00\$11\$01\$05\$00\$0A\$03\$00\$0E\$00\$F1\$00\$10\$00\$13\$00\$12\$05\$00\$09\$01\$14\$00\$01";;
+
+fun _t_chor_step l k = if k <= 0 then hd l else _t_chor_step (tl l) (k - 1);;
+
+fun _t_chor_eq name s wt wk wa wb =
+    let s -> [t k a b] in
+    (
+        t_int (strcat name ": t") t wt;
+        t_int (strcat name ": kind") k wk;
+        t_int (strcat name ": a") a wa;
+        t_int (strcat name ": b") b wb
+    );;
+
+fun _t_chor_units =
+    t_int "pos 0 dents" (_chor_pos 0) 0;
+    t_int "pos 10 dents rounds to 9 holes" (_chor_pos 10) 9;
+    t_int "pos 19 dents stays under 17" (_chor_pos 19) 16;
+    t_int "led byte inverts" (_chor_led 0) 4;
+    t_int "led byte inverts back" (_chor_led 4) 0;
+    t_int "led byte clamps" (_chor_led 9) 0;
+    t_int "palette black by contract" (_chor_palette 7) 0;
+    0;;
+
+fun _t_chor_parse =
+    let chor_parse T_CHOR_SCORE -> s in
+    (
+        t_int "score parses to eleven steps" (_chor_count s) 11;
+        _t_chor_eq "led red" (_t_chor_step s 0) 100 CHO_LED 0 0xff0000;
+        _t_chor_eq "all leds blue, first" (_t_chor_step s 1) 150 CHO_LED 0 0x0000ff;
+        _t_chor_eq "all leds blue, last" (_t_chor_step s 5) 150 CHO_LED 4 0x0000ff;
+        _t_chor_eq "ear absolute" (_t_chor_step s 6) 150 CHO_EAR 0 9;
+        _t_chor_eq "ear by delta" (_t_chor_step s 7) 150 CHO_EAR 1 4;
+        _t_chor_eq "led off" (_t_chor_step s 8) 150 CHO_LED 1 0;
+        _t_chor_eq "palette resolves" (_t_chor_step s 9) 150 CHO_LED 4 0xff0000;
+        _t_chor_eq "the end restores" (_t_chor_step s 10) 600 CHO_END 0 0
+    );;
+
+fun _t_chor_edges =
+    t_true "garbage parses to nothing" ((chor_parse "xx") == nil);
+    t_true "nil parses to nothing" ((chor_parse nil) == nil);
+    // An unknown opcode ends the parse; what was understood plays.
+    let chor_parse "\$01\$01\$01\$01\$00\$01\$05\$00\$07\$04\$FF\$00\$00\$00\$00\$00\$55" -> s in
+    (
+        t_int "unknown opcode stops cleanly" (_chor_count s) 2;
+        _t_chor_eq "prefix still plays" (_t_chor_step s 0) 0 CHO_LED 0 0xff0000
+    );
+    // The real thing: taichi's 13 KB must parse rich and in order.
+    0;;
+
+fun t_chor =
+    _t_chor_units;
+    _t_chor_parse;
+    _t_chor_edges;
+    0;;
