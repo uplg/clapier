@@ -37,7 +37,11 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new(base: PathBuf, overlay: Option<PathBuf>, rabbit: Option<IpAddr>) -> Arc<Self> {
+    pub fn new(
+        base: Option<PathBuf>,
+        overlay: Option<PathBuf>,
+        rabbit: Option<IpAddr>,
+    ) -> Arc<Self> {
         Arc::new(Self {
             tree: ContentTree { base, overlay },
             rabbit,
@@ -181,13 +185,13 @@ async fn status_page(State(app): State<Arc<AppState>>) -> Html<String> {
             rabbit: Some(hit.peer) == app.rabbit,
         })
         .collect();
-    let serving = match &app.tree.overlay {
-        Some(overlay) => format!(
-            "{} + overlay {}",
-            app.tree.base.display(),
-            overlay.display()
-        ),
-        None => app.tree.base.display().to_string(),
+    let serving = match (&app.tree.base, &app.tree.overlay) {
+        (Some(base), Some(overlay)) => {
+            format!("{} + overlay {}", base.display(), overlay.display())
+        }
+        (Some(base), None) => base.display().to_string(),
+        (None, Some(overlay)) => format!("overlay {}", overlay.display()),
+        (None, None) => "nothing (empty tree)".to_string(),
     };
     Html(pages::render_status(
         app.started.elapsed(),

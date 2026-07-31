@@ -18,9 +18,10 @@ struct Args {
     #[arg(long, default_value = "0.0.0.0:80")]
     bind: SocketAddr,
 
-    /// Content root to serve (the tree containing vl/)
+    /// Base content tree to serve behind the overlay (a tree containing
+    /// vl/); optional since the overlay can carry everything
     #[arg(long)]
-    root: PathBuf,
+    root: Option<PathBuf>,
 
     /// Overlay tree tried before the root: rabbits/<mac>/… for requests
     /// carrying a valid `m` query param, then common/…
@@ -47,11 +48,19 @@ async fn main() -> Result<()> {
         .with_ansi(std::io::stdout().is_terminal())
         .init();
 
+    if args.root.is_none() && args.overlay.is_none() {
+        anyhow::bail!("nothing to serve: pass --root, --overlay or both");
+    }
     let root = args
         .root
-        .canonicalize()
-        .with_context(|| format!("content root not found: {}", args.root.display()))?;
-    if !root.join("vl").is_dir() {
+        .map(|r| {
+            r.canonicalize()
+                .with_context(|| format!("content root not found: {}", r.display()))
+        })
+        .transpose()?;
+    if let Some(root) = &root
+        && !root.join("vl").is_dir()
+    {
         warn!(
             "no vl/ under {} - the rabbit will not find bc.jsp there",
             root.display()
@@ -76,18 +85,24 @@ async fn main() -> Result<()> {
     let listener = tokio::net::TcpListener::bind(args.bind)
         .await
         .with_context(|| format!("cannot bind {}", args.bind))?;
-    match &overlay {
-        Some(o) => info!(
+    match (&root, &overlay) {
+        (Some(r), Some(o)) => info!(
             "clapier listening on http://{} - serving {} + overlay {}",
             args.bind,
-            root.display(),
+            r.display(),
             o.display()
         ),
-        None => info!(
+        (Some(r), None) => info!(
             "clapier listening on http://{} - serving {}",
             args.bind,
-            root.display()
+            r.display()
         ),
+        (None, Some(o)) => info!(
+            "clapier listening on http://{} - serving overlay {}",
+            args.bind,
+            o.display()
+        ),
+        (None, None) => unreachable!("rejected above"),
     }
     axum::serve(
         listener,

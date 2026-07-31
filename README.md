@@ -80,9 +80,14 @@ $ ./scripts/rabbit-say.sh "Bonjour."
 $ cargo build --release
 $ ./target/release/clapier \
     --bind 0.0.0.0:80 \
-    --root /path/to/content \
+    --overlay garenne/overlay \
     --rabbit 192.168.1.155
 ```
+
+The overlay is all a garenne rabbit needs (its bytecode, its voice, its
+sounds). `--root` optionally mounts a legacy base tree behind it, for
+serving the original Violet ecosystem to a stock bytecode; whatever the
+overlay does not hold is looked up there, or 404s without it.
 
 `--rabbit` tags the rabbit's requests with a 🐰 in the logs and on the
 status page. (On modern macOS, listening on port 80 needs no special

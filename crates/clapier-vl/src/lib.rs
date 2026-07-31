@@ -22,12 +22,14 @@ use axum::{
 };
 
 /// What a request is resolved against: an optional overlay in front of
-/// the base tree. Overlay lookups are tried per-rabbit
-/// (`<overlay>/rabbits/<mac>/…`, when the request carries a valid `m`)
-/// then common (`<overlay>/common/…`), and serve regular files only;
-/// directories, index files and listings remain the base tree's business.
+/// an optional base tree (at least one is expected). Overlay lookups are
+/// tried per-rabbit (`<overlay>/rabbits/<mac>/…`, when the request
+/// carries a valid `m`) then common (`<overlay>/common/…`), and serve
+/// regular files only; directories, index files and listings remain the
+/// base tree's business. Without a base tree, whatever the overlay does
+/// not hold is simply not found.
 pub struct ContentTree {
-    pub base: PathBuf,
+    pub base: Option<PathBuf>,
     pub overlay: Option<PathBuf>,
 }
 
@@ -55,7 +57,9 @@ pub async fn respond(tree: &ContentTree, method: &Method, uri: &Uri) -> Response
             }
         }
     }
-    let root = &tree.base;
+    let Some(root) = &tree.base else {
+        return plain(StatusCode::NOT_FOUND, "not found\n");
+    };
     let Some(path) = resolve(root, uri.path()) else {
         return plain(StatusCode::BAD_REQUEST, "path rejected\n");
     };

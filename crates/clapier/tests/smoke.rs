@@ -7,11 +7,11 @@ use std::net::SocketAddr;
 use clapier::AppState;
 
 async fn spawn_server(root: std::path::PathBuf) -> SocketAddr {
-    spawn_server_with_overlay(root, None).await
+    spawn_server_with_overlay(Some(root), None).await
 }
 
 async fn spawn_server_with_overlay(
-    root: std::path::PathBuf,
+    root: Option<std::path::PathBuf>,
     overlay: Option<std::path::PathBuf>,
 ) -> SocketAddr {
     let app = AppState::new(root, overlay, None);
@@ -99,7 +99,7 @@ async fn overlay_routes_the_tribe() {
     std::fs::write(overlay.join("common/vl/bc.jsp"), b"COMMON").expect("write");
     std::fs::write(overlay.join("rabbits/0019db9c2815/vl/bc.jsp"), b"CANARY").expect("write");
 
-    let addr = spawn_server_with_overlay(base, Some(overlay)).await;
+    let addr = spawn_server_with_overlay(Some(base), Some(overlay)).await;
     let cases: &[(&'static [u8], &'static [u8])] = &[
         // The canary rabbit, exactly as the boot asks (double slash included).
         (
@@ -164,6 +164,41 @@ async fn fleet_remembers_the_boot_fetch() {
     let page = String::from_utf8_lossy(&status);
     assert!(page.contains("0019db9c2815"), "fleet table: {page}");
     assert!(page.contains("last bc.jsp"), "fleet table: {page}");
+}
+
+/// Overlay with no base tree at all: the overlay serves, everything
+/// else is a plain 404. This is the burrow's normal shape once the
+/// legacy content tree retires.
+#[tokio::test]
+async fn overlay_alone_serves_and_404s_the_rest() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let overlay = dir.path().join("overlay");
+    std::fs::create_dir_all(overlay.join("common/vl")).expect("mkdir");
+    std::fs::write(overlay.join("common/vl/bc.jsp"), b"COMMON").expect("write");
+
+    let addr = spawn_server_with_overlay(None, Some(overlay)).await;
+    let response = tokio::task::spawn_blocking(move || {
+        raw_request(
+            addr,
+            b"GET /vl//bc.jsp?m=00:19:db:9c:28:15 HTTP/1.0\r\n\r\n",
+        )
+    })
+    .await
+    .expect("join");
+    let header_end = response
+        .windows(4)
+        .position(|w| w == b"\r\n\r\n")
+        .expect("end of headers")
+        + 4;
+    assert_eq!(&response[header_end..], b"COMMON");
+
+    let missing = tokio::task::spawn_blocking(move || {
+        raw_request(addr, b"GET /vl/nothing.forth HTTP/1.0\r\n\r\n")
+    })
+    .await
+    .expect("join");
+    let head = String::from_utf8_lossy(&missing).to_ascii_lowercase();
+    assert!(head.contains(" 404 "), "response: {head}");
 }
 
 #[tokio::test]
