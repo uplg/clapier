@@ -14,8 +14,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   from the pulse alone, and the pilot never goes blind again. Older
   pulses still parse; the trailing field is optional.
 
+- The log socket answers a roll call at bind time: on macOS a
+  SO_REUSEPORT join can race the dying previous instance and leave the
+  new socket deaf to broadcasts while looking perfectly bound. The
+  listener now proves it hears (a broadcast probe, or any rabbit pulse,
+  within 2.5 s) and rebinds until it does.
+
 ### Fixed
 
+- `garenne-ctl` accepts broadcast targets again, as the Python tool
+  always did (`SO_BROADCAST` was lost in the port).
+- `/favicon.ico` no longer pollutes the request log and journal.
 - The launchd template passes `--garenne` with an absolute path: agents
   start from `/`, where the relative default never finds the brain, and
   the adoption promise held everywhere but there.

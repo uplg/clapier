@@ -131,6 +131,8 @@ pub async fn poll_statuses(app: Arc<AppState>, every: Duration) {
 /// One command over the rabbit's UDP control port, reply awaited.
 pub async fn ctl_send(ip: IpAddr, cmd: &str) -> anyhow::Result<String> {
     let sock = tokio::net::UdpSocket::bind(("0.0.0.0", 0)).await?;
+    // Broadcast targets are legal here, like the Python tool allowed.
+    socket2::SockRef::from(&sock).set_broadcast(true)?;
     sock.send_to(format!("grn1 {cmd}").as_bytes(), (ip, 9998))
         .await?;
     let mut buf = [0u8; 2048];
@@ -242,12 +244,44 @@ pub fn log_socket(port: u16) -> std::io::Result<tokio::net::UdpSocket> {
     tokio::net::UdpSocket::from_std(sock.into())
 }
 
+/// Bind the log port, then prove the socket actually hears: on macOS a
+/// SO_REUSEPORT join races the dying previous instance's socket, the
+/// kernel's group steering freezes on the corpse, and the survivor
+/// stays deaf to broadcasts while looking perfectly bound. The roll
+/// call catches it: send ourselves a datagram, and rebind until it
+/// arrives.
+async fn log_socket_verified(port: u16) -> std::io::Result<tokio::net::UdpSocket> {
+    for attempt in 1..=5u32 {
+        let sock = log_socket(port)?;
+        // The probe must be a broadcast: a deaf socket still receives
+        // unicast, which fooled the first version of this roll call.
+        // Success is any datagram at all - the probe looping back, or a
+        // rabbit's own two-second pulse.
+        let probe = tokio::net::UdpSocket::bind(("0.0.0.0", 0)).await?;
+        socket2::SockRef::from(&probe).set_broadcast(true)?;
+        let _ = probe
+            .send_to(b"clapier roll call", ("255.255.255.255", port))
+            .await;
+        let mut buf = [0u8; 64];
+        match tokio::time::timeout(Duration::from_millis(2500), sock.recv_from(&mut buf)).await {
+            Ok(Ok(_)) => return Ok(sock),
+            _ => {
+                tracing::warn!("udp {port} bound but deaf (attempt {attempt}), rebinding");
+                drop(sock);
+                tokio::time::sleep(Duration::from_millis(200)).await;
+            }
+        }
+    }
+    // Last try is returned unverified rather than giving up the port.
+    log_socket(port)
+}
+
 /// Feeds the fleet register from the rabbits' UDP log channel. The
 /// channel is broadcast on the LAN, so hearing every rabbit only takes
 /// joining the port. Non-pulse chatter (`button: click`, reassoc
 /// traces) is left to the human listener scripts.
 pub async fn listen_pulses(app: Arc<AppState>, port: u16) {
-    let sock = match log_socket(port) {
+    let sock = match log_socket_verified(port).await {
         Ok(sock) => sock,
         Err(err) => {
             tracing::warn!("cannot hear pulses, udp {port} unavailable: {err}");
@@ -474,6 +508,10 @@ async fn serve_content(
 }
 
 fn record(app: &AppState, peer: IpAddr, method: Method, uri: &Uri, resp: &Response) {
+    // Browser reflexes are not traffic worth remembering.
+    if uri.path() == "/favicon.ico" {
+        return;
+    }
     let bytes = resp
         .headers()
         .get(header::CONTENT_LENGTH)
