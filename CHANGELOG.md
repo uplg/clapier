@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-08-01
+
 ### Added
 
 - The Violet shelf (`docs/violet/`): the original Metal reference (676
@@ -87,7 +89,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with checksums for everything.
 - The README's adoption guide, from cupboard to burrow.
 
-[Unreleased]: https://github.com/uplg/clapier/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/uplg/clapier/compare/v0.1.4...HEAD
+[0.1.4]: https://github.com/uplg/clapier/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/uplg/clapier/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/uplg/clapier/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/uplg/clapier/compare/v0.1.0...v0.1.1
