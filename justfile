@@ -17,6 +17,10 @@ check:
 deny:
     cargo deny check
 
+# Supply-chain audits: every dependency audited or knowingly exempted
+vet:
+    cargo vet
+
 # The garenne golden-frame suite in the simulator
 garenne-test:
     ./garenne/build.sh test
