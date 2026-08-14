@@ -1,0 +1,22 @@
+#!/sbin/openrc-run
+
+name="clapier"
+description="Clapier - the Nabaztag's HTTP burrow"
+
+command="/opt/clapier/clapier"
+command_args="--bind 0.0.0.0:80 --overlay /opt/clapier/overlay --garenne /opt/clapier/garenne.bin --rabbit @@RABBIT_IP@@"
+command_user="clapier:clapier"
+command_background="yes"
+pidfile="/run/clapier.pid"
+output_log="/var/log/clapier.log"
+error_log="/var/log/clapier.log"
+
+export RUST_LOG="info"
+
+depend() {
+    need net
+}
+
+start_pre() {
+    checkpath -f -o clapier:clapier -m 0644 /var/log/clapier.log
+}
