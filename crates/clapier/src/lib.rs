@@ -159,6 +159,14 @@ pub fn vet_ctl(cmd: &str) -> Result<String, String> {
         ["color", c] if c.len() == 6 && c.chars().all(|ch| ch.is_ascii_hexdigit()) => {
             Ok(format!("color {c}"))
         }
+        ["led", i, c]
+            if i.len() == 1
+                && ('0'..='4').contains(&i.chars().next().unwrap_or('9'))
+                && c.len() == 6
+                && c.chars().all(|ch| ch.is_ascii_hexdigit()) =>
+        {
+            Ok(format!("led {i} {c}"))
+        }
         ["ears", a, b] => match (a.parse::<u32>(), b.parse::<u32>()) {
             (Ok(a), Ok(b)) if a <= 16 && b <= 16 => Ok(format!("ears {a} {b}")),
             _ => Err("ears wants two positions in 0..16".to_string()),
