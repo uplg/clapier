@@ -27,7 +27,7 @@ var NET_BCAST = "\$C0\$A8\$01\$FF";;  // 192.168.1.255
 // Where clapier lives. The config sector's server field replaces this
 // default at link_init when it parses as a dotted quad; the hardcode
 // only covers a hostname sector (we have no DNS) or an unreadable one.
-var CLAPIER_IP = "\$C0\$A8\$01\$A5";;  // 192.168.1.165
+var CLAPIER_IP = "\$C0\$A8\$01\$67";;  // 192.168.1.103 (the Pi)
 
 // Our MAC, cached from the netMac native at rx_init time.
 var net_mac = nil;;

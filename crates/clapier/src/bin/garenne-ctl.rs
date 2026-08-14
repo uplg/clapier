@@ -61,6 +61,10 @@ fn wall_clock() -> String {
     let millis = now.subsec_millis();
     #[cfg(unix)]
     {
+        // libc deprecates the `time_t` alias ahead of musl 1.2 widening it
+        // to 64 bits; both the cast and localtime_r track the alias, so this
+        // code is correct on either width.
+        #[allow(deprecated)]
         let t = now.as_secs() as libc::time_t;
         let mut tm: libc::tm = unsafe { std::mem::zeroed() };
         unsafe { libc::localtime_r(&t, &mut tm) };

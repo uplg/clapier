@@ -43,6 +43,10 @@ jobs:
             runner: ubuntu-24.04-arm
             target: aarch64-unknown-linux-musl
             musl: true
+          - name: linux-armv6
+            runner: ubuntu-latest
+            target: arm-unknown-linux-musleabihf
+            zigbuild: true
           - name: macos-aarch64
             runner: macos-latest
             target: aarch64-apple-darwin
@@ -61,11 +65,20 @@ jobs:
       - name: musl toolchain
         if: matrix.musl
         run: sudo apt-get update -qq && sudo apt-get install -y -qq musl-tools
+      - name: zigbuild toolchain
+        if: matrix.zigbuild
+        run: pip install cargo-zigbuild
       - uses: actions/download-artifact@v8
         with:
           name: garenne
       - name: build
+        if: ${{ !matrix.zigbuild }}
         run: cargo build --release --locked --target ${{ matrix.target }} -p clapier -p clapier-chor -p clapier-flash
+      - name: build (zigbuild)
+        if: matrix.zigbuild
+        env:
+          RUSTFLAGS: -C target-cpu=arm1176jzf-s
+        run: cargo zigbuild --release --locked --target ${{ matrix.target }} -p clapier -p clapier-chor -p clapier-flash
       - name: package
         shell: bash
         run: |

@@ -72,6 +72,13 @@ fun _ctl_run frame macsrc cmd =
         set leds_breath_color = htoi (strsub cmd 6 6);
         _ctl_reply frame macsrc "ok"
     )
+    else if ((strlen cmd) == 12) && (!vstrcmp cmd 0 "led " 0 4) then
+    (
+        // led I RRGGBB: one LED (0..4) to a static color. Body LEDs stay
+        // as set — the breathing loop only animates the base and nose.
+        led (atoi (strsub cmd 4 1)) (htoi (strsub cmd 6 6));
+        _ctl_reply frame macsrc "ok led"
+    )
     else if ((strlen cmd) > 5) && (!vstrcmp cmd 0 "ears " 0 5) then
     (
         // ears A B: both ears to absolute positions 0..16.
