@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-15
+
+### Added
+
+- Clapier can now live on a Raspberry Pi 1: `scripts/build-rpi1.sh`
+  cross-builds the server and garenne-ctl for ARMv6 musl (cargo-zigbuild,
+  arm1176jzf-s), `deploy/openrc/clapier` + `scripts/deploy-pi.sh` install
+  it as an Alpine/OpenRC service under /opt/clapier (dedicated user,
+  setcap for port 80). The release workflow ships a `linux-armv6` archive.
+- `led I RRGGBB` control verb (garenne 0.12.0): one LED to a static
+  color, untouched by the breathing animation. Born for the daily Tempo
+  color on the belly LED, driven by maison.
+
+### Changed
+
+- garenne's default clapier address is the Pi (192.168.1.103); the Mac
+  launchd agent is retired. The speech pipeline (pocket-tts, ffmpeg)
+  remains a Mac-side workflow.
+
+### Fixed
+
+- garenne-ctl no longer trips the `libc::time_t` deprecation on musl
+  targets (width-agnostic cast).
+
 ## [0.1.5] - 2026-08-01
 
 ### Added
